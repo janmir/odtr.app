@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="50px" height="50px" viewBox="0 0 50 50" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 43.1 (39012) - http://www.bohemiancoding.com/sketch -->
+    <title>icon</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <rect id="path-1" x="0" y="0" width="50" height="50"></rect>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="desktop" transform="translate(-93.000000, -19.000000)">
+            <g id="icon" transform="translate(93.000000, 19.000000)">
+                <g>
+                    <mask id="mask-2" fill="white">
+                        <use xlink:href="#path-1"></use>
+                    </mask>
+                    <g id="mask"></g>
+                    <rect id="background" fill="#231F20" mask="url(#mask-2)" x="0" y="0" width="50" height="50" rx="8"></rect>
+                    <text id="odtr" mask="url(#mask-2)" font-family="Sacramento-Regular, Sacramento" font-size="130" font-weight="normal" fill="#FFFFFF">
+                        <tspan x="8" y="40">odtr</tspan>
+                    </text>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,33 @@
+{
+  "name": "odtr-app",
+  "version": "1.0.0",
+  "description": "Odtr client application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "electron . --debug"
+  },
+  "repository": "",
+  "keywords": [
+    "Electron",
+    "quick",
+    "start",
+    "tutorial",
+    "demo"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "~1.7.8"
+  },
+  "dependencies": {
+    "animejs": "^2.2.0",
+    "js-yaml": "^3.10.0",
+    "json2yaml": "^1.1.0",
+    "mithril": "^1.1.5",
+    "moment-timezone": "^0.5.13",
+    "moment-transform": "^1.0.1",
+    "node-notifier": "^5.1.2",
+    "node-schedule": "^1.2.5"
+  }
+}

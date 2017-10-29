@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="13px" height="13px" viewBox="0 0 13 13" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 43.1 (39012) - http://www.bohemiancoding.com/sketch -->
+    <title>close</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" stroke-linecap="round">
+        <g id="desktop" transform="translate(-359.000000, -350.000000)" stroke="#FFFFFF" stroke-width="3">
+            <g id="Login" transform="translate(31.000000, 320.000000)">
+                <g id="close" transform="translate(330.000000, 32.000000)">
+                    <path d="M0.28125,0.28125 L8.73747921,8.73747921" id="Line"></path>
+                    <path d="M0.28125,0.28125 L8.73747921,8.73747921" id="Line" transform="translate(4.500000, 4.500000) scale(1, -1) translate(-4.500000, -4.500000) "></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

@@ -1,0 +1,398 @@
+body{
+    width: 360px;
+    height: 220px;
+    margin: 0px;
+    padding: 0px;
+    background-color: #231F20;
+    /* background-color: rgb(24, 21, 22); */
+    overflow: hidden;
+    border-radius: 10px;
+    color: #fff;
+    position: relative;
+
+    font-family: 'Raleway', sans-serif;
+}
+#loading{
+    width: 360px;
+    height: 220px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    font-size: 13px;
+}
+    #loading .text{
+        padding: 4px 8px;
+        position: absolute;
+        top: 65%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+
+        width: fit-content;
+        background-color: #EC3950;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+
+    #loading .overlay{
+        width: 360px;
+        height: 220px;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        background-color: black;
+        opacity: 0.8; 
+    }
+
+    #loading img{
+        position: absolute;
+        top: 35%;
+        left: 43%;
+
+        animation-iteration-count: infinite;
+        animation-duration: 1s;
+        animation-timing-function: ease-in-out;
+        animation-delay: 1s;
+    }
+
+#root{
+    width: 360px;
+    height: 220px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
+
+#root > div{
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#close{
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    cursor: pointer;
+}
+    #close:hover{
+        right: 12px;
+        top: 12px;
+        height: 20px;
+    }
+
+#logo{
+    top: 65px;
+}
+
+#credit{
+    font-size: 12px;
+    top: 130px;
+    color: #aaa;
+}
+
+    #credit .heart{
+        vertical-align: middle;
+        margin: 0 3px;
+    }
+    #credit span{
+        width: 36px;
+        display: inline-block;
+        overflow: hidden;
+        line-height: 8px;
+    }
+
+#form{
+    top: 125px;
+    width: fit-content;
+}
+
+    .input{
+        text-indent: 28px;
+        outline: none;
+        display: block;
+        width: 190px;
+        height: 27px;
+        border-radius: 13px;
+        border: none;
+        margin-bottom: 5px;
+    }
+
+        .input::placeholder{
+            color: #aaa;
+            font-size: 12px;
+        }
+
+    .user{
+        position: absolute;
+        top: 8px;
+        left: 10px;
+    }
+
+    .pass{
+        position: absolute;
+        top: 42px;
+        left: 10px;
+    }
+
+    .error{
+        background-color: darkred;
+        box-shadow: inset 0 0 0 1px #FF0000;
+    }
+
+    .disabled{
+        background-color: rgb(196, 196, 196);
+    }
+
+#buttons{
+    position: absolute;
+    bottom: 0px;
+    height: 55px;
+    width: 100%;
+    text-align: right;
+    padding-right: 50px;
+}
+    .button{
+        position: relative;
+        cursor: pointer;
+        opacity: 0;
+        padding: 0 3px;
+        width: fit-content;
+        height: 100%;
+        display: inline-block;
+    }
+        .button img{
+            margin-bottom: 6px;
+        }
+
+        .button .line{
+            opacity: 0;
+            border-top: 2px dashed white;
+            position: absolute;
+            top: 25px;
+            left: 3px;
+            width: 90%;
+            height: 2px;
+        }
+
+        .button:hover .line{
+            opacity: 1;
+        }
+
+    .separator{
+        overflow: hidden;
+        opacity: 0;        
+        padding: 0 3px;
+        width: 12px;
+        height: 100%;
+        display: inline-block;
+    }
+        .separator img{
+            margin-bottom: -20px;
+        }
+
+        .separator .arrow{
+            margin-left: 0px;
+        }
+#qoute{
+    padding: 10px;
+    font-style: italic;
+    top: 40%;
+    min-width: 250px;
+    text-align: center;
+    position: relative;
+}
+    #qoute .qoute_right{
+        position: absolute;
+        bottom: 0px;
+        right: 0px;
+    }
+    #qoute .qoute_left{
+        position: absolute;
+        top: 0px;
+        left: 0px;
+    }
+
+/*************** Animations ***************/
+.fade-in{
+    animation: fade_in;
+    animation-duration: 1s;
+}
+@keyframes fade_in {
+    from {
+      opacity: 0; 
+    }
+  
+    to {
+      opacity: 1
+    }
+}
+
+.fade-out{
+    animation: fade_out;
+    animation-duration: 0.5s;
+}
+@keyframes fade_out {
+    from {
+      opacity: 1; 
+    }
+  
+    to {
+      opacity: 0
+    }
+}
+
+.slide-in{
+    animation: slide_in;
+    animation-duration: 1s;
+}
+@keyframes slide_in {
+    from {
+        left: 75%;
+    }
+  
+    to {
+        left: 50%;
+    }
+}
+
+
+.pulse {
+    animation-name: pulse;
+    animation-iteration-count: infinite;
+}
+
+@keyframes pulse {
+from {
+    transform: scale3d(1, 1, 1);
+}
+
+50% {
+    transform: scale3d(1.1, 1.1, 1.1);
+}
+
+to {
+    transform: scale3d(1, 1, 1);
+}
+}
+
+
+.bounce {
+    animation-name: bounce;
+    transform-origin: center bottom;
+}
+
+@keyframes bounce {
+    from, 20%, 53%, 80%, to {
+        animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+        transform: translate3d(0,0,0);
+    }
+
+    40%, 43% {
+        animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+        transform: translate3d(0, -30px, 0);
+    }
+
+    70% {
+        animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+        transform: translate3d(0, -15px, 0);
+    }
+
+    90% {
+        transform: translate3d(0,-4px,0);
+    }
+}
+
+
+.rubberBand {
+    animation-name: rubberBand;
+}
+
+@keyframes rubberBand {
+    from {
+        transform: scale3d(1, 1, 1);
+    }
+
+    30% {
+        transform: scale3d(1.25, 0.75, 1);
+    }
+
+    40% {
+        transform: scale3d(0.75, 1.25, 1);
+    }
+
+    50% {
+        transform: scale3d(1.15, 0.85, 1);
+    }
+
+    65% {
+        transform: scale3d(.95, 1.05, 1);
+    }
+
+    75% {
+        transform: scale3d(1.05, .95, 1);
+    }
+
+    to {
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+.shake {
+    animation-name: shake;
+}
+
+@keyframes shake {
+    from, to {
+        transform: translate3d(0, 0, 0);
+    }
+
+    10%, 30%, 50%, 70%, 90% {
+        transform: translate3d(-10px, 0, 0);
+    }
+
+    20%, 40%, 60%, 80% {
+        transform: translate3d(10px, 0, 0);
+    }
+}
+
+.flash {
+    animation-name: flash;
+}
+
+@keyframes flash {
+    from, 50%, to {
+        opacity: 1;
+    }
+
+    25%, 75% {
+        opacity: 0;
+    }
+}
+
+.tada {
+    animation-name: tada;
+}
+
+@keyframes tada {
+    from {
+        transform: scale3d(1, 1, 1);
+    }
+
+    10%, 20% {
+        transform: scale3d(.9, .9, .9) rotate3d(0, 0, 1, -3deg);
+    }
+
+    30%, 50%, 70%, 90% {
+        transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg);
+    }
+
+    40%, 60%, 80% {
+        transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg);
+    }
+
+    to {
+        transform: scale3d(1, 1, 1);
+    }
+}
+ 

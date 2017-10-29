@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="26px" height="39px" viewBox="0 0 26 39" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 43.1 (39012) - http://www.bohemiancoding.com/sketch -->
+    <title>login</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" font-weight="normal" font-family="Sacramento-Regular, Sacramento" font-size="30">
+        <g id="desktop" transform="translate(-300.000000, -493.000000)" stroke="#FFFFFF" fill="#FFFFFF">
+            <g id="Login" transform="translate(31.000000, 320.000000)">
+                <g id="button" transform="translate(269.000000, 167.000000)">
+                    <text id="login">
+                        <tspan x="0" y="28">yes</tspan>
+                    </text>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
