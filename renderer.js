@@ -52,7 +52,7 @@ var svg = {
 svg.init();
 
 var _ = {
-    STATE: -1, //0->splash, 1->login, 2->qoute, 3->notifications
+    STATE: -1, //-1-> init, 0->splash, 1->login, 2->qoute, 3->notifications
 
     //States
     INIT: -1,
@@ -396,6 +396,7 @@ var Mini = {
             case "Credits":{
                 return m("#credit", [
                     m("span", "v0.1"),
+                    " Alpha",
                     m("img.heart", {src: "./static/heart.svg"}),
                     "janmir 2017"
                 ]);
@@ -948,6 +949,7 @@ var App = {
                         }
                     }else{
                         //handle error
+                        console.log("here");
                     }
                 });
             }break;
@@ -1000,4 +1002,5 @@ var App = {
     }
 }
 
+//Mount it!
 m.mount(document.body, App);

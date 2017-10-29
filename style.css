@@ -116,6 +116,8 @@ body{
         border-radius: 13px;
         border: none;
         margin-bottom: 5px;
+
+        transition: background-color 0.3s linear 0s;
     }
 
         .input::placeholder{
