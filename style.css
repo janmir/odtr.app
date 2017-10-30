@@ -213,16 +213,44 @@ body{
     min-width: 250px;
     text-align: center;
     position: relative;
+    text-indent: 5px;
 }
     #qoute .qoute_right{
         position: absolute;
         bottom: 0px;
-        right: 0px;
+        right: -2px;
     }
     #qoute .qoute_left{
         position: absolute;
-        top: 0px;
-        left: 0px;
+        top: -2px;
+        left: -10px
+    }
+
+    #qoute .by{
+        color: #888;
+        position: absolute;
+        right: 25px;
+        bottom: -15px;
+        font-size: 12px;
+    }
+
+#status{
+    height: 20px;
+    width: 100%;
+    bottom: 0px;
+}
+    #status span{
+        white-space: nowrap;
+        height: 16px;
+        color: #aaa;
+        background: #666;
+        display: inline-block;
+        font-size: 13px;
+        padding: 3px 10px;
+        border-radius: 0 8px 0 0;
+        max-width: 200px;
+        text-overflow: ellipsis;
+        overflow: hidden;
     }
 
 /*************** Animations ***************/

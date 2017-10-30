@@ -16,6 +16,12 @@ const WindowsToaster = require('node-notifier').WindowsToaster;
 const isOnline = require('is-online');
 const child = require('child_process').execFile;
 
+function NoInternetError(message = "No internet connection.") {
+    this.name = NoInternetError.name;
+    this.message = (message || "");
+}
+NoInternetError.prototype = new Error();
+
 var urls = {
     WAKE_UP: "https://api.janmir.me/aws-odtr-v2/wakeup",
     LOGIN: "https://api.janmir.me/aws-odtr-v2/login",
@@ -75,6 +81,7 @@ var _ = {
     LOGIN: 1,
     QOUTE: 2,
     NOTIF: 3,
+    DASHBOARD: 4,
 
     //global variables
     INIT_DELAY: 3000,
@@ -84,7 +91,10 @@ var _ = {
 
     OS: "",
     WORK_TIME: 9,
-    FIRST_HIDE: true
+    FIRST_HIDE: true,
+
+    //Scheduler jobs
+    TIME_OUT_JOB: null
 }
 
 var fn = {
@@ -177,6 +187,80 @@ var fn = {
                         m.request({
                             method: "GET",
                             url: urls.LOGIN,
+                            background: true,
+                            data: {
+                                username: username,
+                                password: password
+                            }
+                        })
+                        .then(function(result) {
+                            console.log()
+                            if(result.result !== undefined){
+                                //set data
+                                result.username = username;
+                                result.password = password;
+                                out = Object.assign({}, out, result);
+
+                                //clear
+                                clearInterval(handle);
+
+                                //return
+                                resolve(out);
+                            }
+                            
+                            skip = false;
+                        });
+                    }
+                }, 5000);
+
+            } catch (error) {
+                out.result = false;
+                out.message = error.message;
+                
+                resolve(out);
+            }
+        });
+    },
+    online: ()=>{
+        isOnline().then(online => {
+            if(online){
+
+            }else{
+                throw new NoInternetError();
+            }
+        })
+        .catch(error=>{
+            throw error;
+        });
+    },
+    timeInOut: ()=>{
+        return new Promise((resolve, reject) => {
+            let out = {type: fn.checkLogin.name};
+            
+            try {
+                let counter = 0;
+                let skip = false;
+                let handle = setInterval(()=>{
+                    counter++;
+                    console.log("Trying to timein/timeout: " + counter);
+
+                    if(counter > fn.maxTry){
+                        //clear
+                        clearInterval(handle);
+
+                        //alert
+                        out.result = false;
+                        out.message = "Timeout maxed!";
+                        
+                        resolve(out);
+                    }
+
+                    if(!skip){
+                        skip = true;
+
+                        m.request({
+                            method: "GET",
+                            url: urls.TIME_IN_OUT,
                             background: true,
                             data: {
                                 username: username,
@@ -482,7 +566,22 @@ var fn = {
     startUpSchedules: ()=>{
         //everyday @ 7 am
         //every weekday every hour
-    }
+    },
+    scheduleTimeout: (result)=>{
+        if(result.record !== undefined){
+            let timeIn = result.record.split("|");
+            timeIn = timeIn[timeIn.length - 1].trim();
+            
+            let futureTime = moment(timeIn, "HH:mm A").transform("+09","HH").format('mm HH * * *');  
+            
+            console.log(futureTime);
+    
+            _.TIME_OUT_JOB = schedule.scheduleJob(futureTime, function(){
+                fn.notificationCenter("time-out");
+                alert('The answer to life, the universe, and everything!');
+            });
+        }
+    },
 }
 
 /**************************************************/
@@ -539,7 +638,8 @@ var Mini = {
                 return m("#qoute.slide-in", [
                     m("img.qoute_left", {src:"./static/qoute_left.svg"}),
                     "You're the last of the real ones.",
-                    m("img.qoute_right", {src:"./static/qoute_right.svg"})
+                    m("img.qoute_right", {src:"./static/qoute_right.svg"}),
+                    m(".by", "- Anonymous")
                 ])
             }break;
         }
@@ -703,6 +803,19 @@ var Form = {
             })
         ]);
     }
+}
+
+var Status = {
+    onbeforeremove: (node)=>{
+        console.log("onbeforeremove: " + node.dom.id);  
+        return App.transitionOut(node);
+    },
+
+    view: (node)=>{
+        return m("#status",[
+            m("span", "Status should be written here.")
+        ]);
+    }    
 }
 
 var App = {
@@ -911,8 +1024,8 @@ var App = {
 
                     //wait then start
                     setTimeout(()=>{
-                        //App.changeState(state);
-                        App.changeState(_.NOTIF);
+                        App.changeState(state);
+                        //App.changeState(_.NOTIF);
                     }, _.INIT_DELAY);
                 })
                 .catch((error)=>{
@@ -1148,48 +1261,28 @@ var App = {
                                 fn.notificationCenter("time-in");                            
                             }else{
                                 //check if already logged out
-                                /*
-                                {
-                                    "verified": true,
-                                    "username": "jp.miranda",
-                                    "result": true,
-                                    "since": 9,
-                                    "actual": 9.09,
-                                    "record": "Miranda, Jan Paul | Dev 5 | Lenovo | 09:03 AM | 06:08 PM",
-                                    "date": "2017/10/30",
-                                    "execution": 1608.14
+
+                                //Not yet timed-out
+                                if(result.actual === undefined){
+                                    //notify for hours to go
+                                    fn.notificationCenter("time-remaining", result);
+
+                                    //cron job for since to be 9
+                                    fn.scheduleTimeout(result);
                                 }
-                                */
+                                //Already timed-out
+                                else{
+                                    let currentTime = moment().tz('Asia/Tokyo').transform("+01","mm").format('HH:mm');
+                                    currentTime = currentTime.split(":");
 
-                                //notify for hours to go
-                                fn.notificationCenter("time-remaining", result);
-
-                                //cron job for since to be 9
-                                let timeIn = result.record.split("|")
-                                timeIn = timeIn[timeIn.length - 1].trim();
-                                let futureTime = moment(timeIn, "HH:mm A").transform("+09","HH").format('HH:mm');  
-
-                                let currentTime = moment().tz('Asia/Tokyo').transform("+01","mm").format('HH:mm');
-                                currentTime = currentTime.split(":");
-
-                                console.log(futureTime);
-
-                                var rule = new schedule.RecurrenceRule();
-                                rule.hour = currentTime[0];
-                                rule.minute = currentTime[1];
-                                 
-                                var j = schedule.scheduleJob(rule, function(){
-                                    console.log('Today is recognized by Rebecca Black!');
-                                });
-
-                                currentTime = moment().tz('Asia/Tokyo').transform("+01","mm").format('mm HH * * *');
-                                futureTime = moment(timeIn, "HH:mm A").transform("+09","HH").format('mm HH * * *');  
-                                
-                                console.log(futureTime);                              
-                                j = schedule.scheduleJob(futureTime, function(){
-                                    fn.notificationCenter("time-out");
-                                    alert('The answer to life, the universe, and everything!');
-                                });
+                                    var rule = new schedule.RecurrenceRule();
+                                    rule.hour = currentTime[0];
+                                    rule.minute = currentTime[1];
+                                    
+                                    var job = schedule.scheduleJob(rule, function(){
+                                        alert('Today is recognized by Rebecca Black!');
+                                    });
+                                }
                             }
                         }else{
                             //handle error
@@ -1198,6 +1291,9 @@ var App = {
                     });
                 });
                 
+                
+            }break;
+            case 'dashboard':{
                 
             }break;
         }
@@ -1234,15 +1330,17 @@ var App = {
                     App.loading ? m(Loading):null                    
                 ])
             }break;
-            case _.QOUTE:{
-                return m("#root.qoute", [
-                    m(Close),
-                    m(Mini, {which:"Qoute"})
-                ]);
-            }break;
+            case _.QOUTE:
             case _.NOTIF:{
                 return m("#root.notif", [
-                    m(Close)
+                    m(Close),
+                    m(Mini, {which:"Qoute"}),
+                    m(Status)                    
+                ]);
+            }break;
+            case _.DASHBOARD:{
+                return m("#root.notif", [
+                    m(Close)             
                 ]);
             }break;
         }
