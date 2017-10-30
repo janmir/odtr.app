@@ -10,7 +10,11 @@ const transform = require('moment-transform');
 const yaml = require('js-yaml');
 const jaml = require('json2yaml');
 const schedule = require('node-schedule');
-const notifier = require('node-notifier');
+const os = require('os');
+const NodeNotifier = require('node-notifier');
+const WindowsToaster = require('node-notifier').WindowsToaster;
+const isOnline = require('is-online');
+const child = require('child_process').execFile;
 
 var urls = {
     WAKE_UP: "https://api.janmir.me/aws-odtr-v2/wakeup",
@@ -24,6 +28,7 @@ var urls = {
 var paths = {
     CONFIG_FILE: "user.yaml",
     NOTIFICATION_ICON: "android-chrome-192x192.png",
+    NOTIFICATION_EXE: "SnoreToast.exe",
 
     get: (file)=>{
         let dir = application.getPath("userData");
@@ -36,13 +41,23 @@ var paths = {
         let pat = path.join(dir, file);
 
         return pat;
+    },
+    getCurrent: (file)=>{
+        let dir = __dirname;
+        let pat = path.join(dir, file);
+
+        return pat;
     }
 }
 
 var svg = {
     logo: null,
+    login: null,
+    icon: null,
     init: ()=>{
         svg.logo = svg.getSVG('./static/logo.svg');
+        svg.login = svg.getSVG('./static/login.svg');
+        svg.icon = svg.getSVG('./static/icon_big.svg');
     },
     getSVG: (path)=>{
         let _svg = fs.readFileSync(path, 'utf8');
@@ -65,10 +80,17 @@ var _ = {
     INIT_DELAY: 3000,
     LOGIN_DELAY: 4000,
     QOUTE_DELAY: 100,
-    NOTIF_DELAY: 100
+    NOTIF_DELAY: 100,
+
+    OS: "",
+    WORK_TIME: 9,
+    FIRST_HIDE: true
 }
 
 var fn = {
+    notifier: null,
+    maxTry: 5,
+    reSpawn: 0,
     checkCredentials: ()=>{
         return new Promise((resolve, reject) => {
             let yaml_file = paths.get(paths.CONFIG_FILE);
@@ -137,6 +159,17 @@ var fn = {
                 handle = setInterval(()=>{
                     counter++;
                     console.log("Trying to Login: " + counter);
+
+                    if(counter > fn.maxTry){
+                        //clear
+                        clearInterval(handle);
+
+                        //alert
+                        out.result = false;
+                        out.message = "Timeout maxed!";
+                        
+                        resolve(out);
+                    }
 
                     if(!skip){
                         skip = true;
@@ -213,6 +246,17 @@ var fn = {
                 handle = setInterval(()=>{
                     counter++;
                     console.log("Trying to check: " + counter);
+
+                    if(counter > fn.maxTry){
+                        //clear
+                        clearInterval(handle);
+
+                        //alert
+                        out.result = false;
+                        out.message = "Timeout maxed!";
+                        
+                        resolve(out);
+                    }
 
                     if(!skip){
                         skip = true;
@@ -325,57 +369,147 @@ var fn = {
                     }break;
                 }
             }break;                                    
+            case "the user clicked on the toast.":{ //clicked on body
+                application.mainWindow.show();
+            }break;
+            case "the toast has timed out.": //closed on timeout  
             case "timeout":{
                 //Wait 5 mins this show again
             }break;
-            case "replied":{}break;                                    
+            case "the user dismissed this toast.": //clicked close button
+            case "replied":{}break;
         }
+
+        /*fn.notifier.on('click', function (notifierObject, options) {
+            alert("click");
+        });                  
+        fn.notifier.on('timeout', function (notifierObject, options) {
+            alert("timeout");
+        });*/
+
     },
-    notificationCenter: (type, callback = fn.notificationHandler )=>{
+    notificationCenter: (type, data, callback = fn.notificationHandler )=>{
+        let notification;
+        let message = type;
         let time = 60 * 10;
         let icon = paths.getStatic(paths.NOTIFICATION_ICON);
-        let notification = {
-            title: 'ODTR App',
-            icon: icon,
-            sound: "Hero",//"Submarine",
-            timeout: time,
-            closeLabel: "Cancel",
-            //actions: "Time-out",
-            //actions: ["Snooze 5 minutes", "Snooze 10 minutes", "Snooze 1 hour"],
-            //dropdownLabel: "Snooze"
-            //reply: true
-        };
 
+        //OS specific settings
+        switch(_.OS){
+            case "Windows_NT":{
+                if(fn.notifier == null){
+                    fn.notifier = new WindowsToaster({
+                        withFallback: false,
+                        customPath: paths.getCurrent(paths.NOTIFICATION_EXE)
+                    });
+                    //fn.notifier = NodeNotifier;
+                }
+                
+                notification = {
+                    title: 'Notification:',
+                    icon: icon,
+                    sound: Notification.Reminder,//"Notification.Reminder",//"Notification.IM", Notification.SMS, Notification.Mail
+                    wait: true,
+                    id: 1,
+                    appID: "odtr.app",
+                };
+            }break;
+            default:{
+                if(fn.notifier == null){
+                    fn.notifier = NodeNotifier;
+                }
+                notification = {
+                    title: 'Notification:',
+                    icon: icon,
+                    sound: "Hero",
+                    timeout: time,
+                    closeLabel: "Cancel",
+                };
+            }break;
+        }
+
+        //Type changes
         switch(type){
             case "time-in":{
-                let message = `You have not yet timed-in. ${App.holiday?"But it's a " +
+                message = `You have not yet timed-in. ${App.holiday?"But it's a " +
                               App.holiday_description + 
                               " so it is okay. I guess..":"Time-in now?"}`;
                 
-                notification.message = message;
                 if(!App.holiday){
                     notification.actions = "Time-in";
                 }
 
-                notifier.notify(notification, callback);
             }break;
             case "time-out":{
-                let message = `Phewwww! You can time out now. Pressing cancel will snooze for 5 mins.`;
-                
-                notification.message = message;
-                if(!App.holiday){
-                    notification.actions = "Time-out";
-                }
+                message = `Phewwww! What a day! You can time out now.`;
+            }break;
+            case "time-remaining":{
+                let timeToGo = _.WORK_TIME - data.since;
+                let timeIn = data.record.split("|")
+                timeIn = timeIn[timeIn.length - 1].trim();
 
-                notifier.notify(notification, callback);
+                message = "Hello there! your time-in was \n" + timeIn + ", " 
+                        + fn.wordify("number", timeToGo) + " more hour" + ((data > 1)?"s":"") + " to go!"
+            }break;
+            default:{
+                //hide defaults after 3 secods
+                setTimeout(()=>{
+                    //hide
+                    console.log("Hide all default notifications");
+
+                    //remove previous
+                    child(paths.getCurrent(paths.NOTIFICATION_EXE), ['-close','1'],function(err, data) {
+                        console.log(err,data);
+                    });
+                },5000);
+                
             }break;
         }
+
+        //Show new
+        notification.message = message;     
+        fn.notifier.notify(notification, callback);
+    },
+    wordify: (type, index)=>{
+        switch(type){
+            case "number":{
+                return ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"][index];
+            }break;
+        }
+
+        return type;
     },
     startUpSchedules: ()=>{
         //everyday @ 8 am
         //every weekday every hour
     }
 }
+
+/**************************************************/
+application.mainWindow.on('hide', function () {
+    if(_.FIRST_HIDE){
+        fn.notificationCenter("I'm just hiding here,\nunder the system tray.");
+        _.FIRST_HIDE = false;
+    }
+
+    //set css
+    let root = document.getElementById("root");
+    root.style = "opacity: 1; transform: scaleX(1) scaleY(1);";
+});
+/*application.mainWindow.on('show', function () {
+    console.log("showing app...");
+
+    let root = document.getElementById("root");
+    root.style = "opacity: 0; transform: scaleX(0.6) scaleY(0.6);";
+    
+    //check if already logged in
+    setTimeout(()=>{
+        App.windowsTransitionIn("#root")
+        .then(()=>{
+            console.log("app shown...");
+        });
+    },200);
+});*/
 
 /******************* Components *******************/
 var Mini = {
@@ -445,12 +579,19 @@ var Loading = {
         className = className[index];
         console.log(index+ ":" + className);
 
-        return m("#loading", [
+        /*return m("#loading", [
             m(".overlay"),
             m("img", {
                 src:"./static/icon_big.svg",
                 class: className
             }),
+            m(".text","Loading...")
+        ])*/
+        return m("#loading", [
+            m(".overlay"),
+            m(".image", {
+                class: className
+            }, svg.icon),
             m(".text","Loading...")
         ])
     }
@@ -490,8 +631,7 @@ var Button = {
         let types = node.attrs.type;
 
         let buttons = types.map(el=>{
-            return m(
-                ".button",[
+            /*return m(".button",[
                     m("img", {
                         src:`./static/${el}.svg`, 
                         onclick:(node)=>{
@@ -500,10 +640,23 @@ var Button = {
                         id: el
                     }),
                     m(".line")
-                ]
-            );
+            ]);*/
+            return m(".button",{
+                onclick:(e)=>{
+                    // console.log(e);
+                    // App.onclick(e.target.id);
+                    App.onclick(e.target.innerHTML);
+                }, 
+                id: el
+            },[
+                svg.login,
+                m(".line")
+            ],);
         });
+
+
         buttons = Button.join(buttons);        
+
         return m("#buttons", [
             buttons
         ]);
@@ -577,6 +730,16 @@ var App = {
             console.log(result);
         });
         */
+
+        //Initializations
+        _.OS =  os.type();
+
+        //Logging
+        let data = {
+            "directory": application.getPath("userData"),
+            "os": _.OS
+        };
+        console.info(data);
     },
 
     changeState: (state)=>{
@@ -614,6 +777,40 @@ var App = {
         });
     },
 
+    windowsTransitionIn: (window)=>{
+        let animation = anime({
+            targets: window,
+            opacity: [
+                { value: 1, duration: 300, delay: 0, easing: 'easeInOutSine' }
+            ],
+            scaleX: [
+                { value: 1, duration: 200, delay: 100, easing: 'easeInOutSine' }
+            ],
+            scaleY: [
+                { value: 1, duration: 200, delay: 100, easing: 'easeInOutSine' }
+            ]
+        });
+
+        return animation.finished;
+    },
+
+    windowsTransitionOut: (window)=>{
+        let animation = anime({
+            targets: window,
+            opacity: [
+                { value: 0, duration: 300, delay: 0, easing: 'easeInOutSine' }
+            ],
+            scaleX: [
+                { value: 0.6, duration: 200, delay: 100, easing: 'easeInOutSine' }
+            ],
+            scaleY: [
+                { value: 0.6, duration: 200, delay: 100, easing: 'easeInOutSine' }
+            ],
+        });
+
+        return animation.finished;
+    },
+
     onbeforeupdate: (node, old)=>{
         // console.log("onbeforeupdate");
         // console.log(node);
@@ -638,6 +835,7 @@ var App = {
 
     onclick: (id)=>{
         //show loading 
+        console.log("Onclick!" + id);
 
         switch(id){
             case "yes":{
@@ -694,6 +892,7 @@ var App = {
 
     main_process: (node)=>{
         let className = node.dom.className;
+        className = className.split(" ")[0];
 
         switch(className){
             case 'loading':{
@@ -712,7 +911,8 @@ var App = {
 
                     //wait then start
                     setTimeout(()=>{
-                        App.changeState(state);
+                        //App.changeState(state);
+                        App.changeState(_.NOTIF);
                     }, _.INIT_DELAY);
                 })
                 .catch((error)=>{
@@ -839,7 +1039,7 @@ var App = {
                         let save = false;
                         result.forEach((res)=>{
 
-                            //console.log(res);
+                            console.log(res);
         
                             //process promises
                             switch(res.type){
@@ -934,30 +1134,60 @@ var App = {
             }break;
             case 'notif':{
                 //check if already logged in
-                application.mainWindow.hide();
-                
-                //checkLogin
-                fn.checkLogin(App.username, App.password)
-                .then((result)=>{
-                    console.log(result);
+                App.windowsTransitionOut("#root")
+                .then(()=>{
+                    application.mainWindow.hide();
 
-                    if(result.result){
-                        if(result.since === null){
-                            fn.notificationCenter("time-in");                            
+                    //checkLogin
+                    fn.checkLogin(App.username, App.password)
+                    .then((result)=>{
+                        console.log(result);
+
+                        if(result.result){
+                            if(result.since === null){
+                                fn.notificationCenter("time-in");                            
+                            }else{
+                                //notify for hours to go
+                                fn.notificationCenter("time-remaining", result);
+
+                                //cron job for since to be 9
+                                let timeIn = result.record.split("|")
+                                timeIn = timeIn[timeIn.length - 1].trim();
+                                let futureTime = moment(timeIn, "HH:mm A").transform("+09","HH").format('HH:mm');  
+
+                                let currentTime = moment().tz('Asia/Tokyo').transform("+01","mm").format('HH:mm');
+                                currentTime = currentTime.split(":");
+
+                                console.log(futureTime);
+
+                                var rule = new schedule.RecurrenceRule();
+                                rule.hour = currentTime[0];
+                                rule.minute = currentTime[1];
+                                 
+                                var j = schedule.scheduleJob(rule, function(){
+                                    console.log('Today is recognized by Rebecca Black!');
+                                });
+
+                                currentTime = moment().tz('Asia/Tokyo').transform("+01","mm").format('mm HH * * *');
+                                console.log(currentTime);                              
+                                j = schedule.scheduleJob(currentTime, function(){
+                                    console.log('The answer to life, the universe, and everything!');
+                                });
+                            }
                         }else{
-                            //cron job for since to be 9
+                            //handle error
+                            console.error(result.message);
                         }
-                    }else{
-                        //handle error
-                        console.log("here");
-                    }
+                    });
                 });
+                
+                
             }break;
         }
     },
 
     view: (node)=>{
-        console.log("%cDraw!", "color: green; font-weight: bold");
+        console.log("%creDraw!", "color: green; font-weight: bold");
         
         switch(_.STATE){
             case _.INIT:{

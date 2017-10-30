@@ -7,6 +7,7 @@ const path = require('path');
 const url = require('url');
 
 var mainWindow;
+var appTray;
 var args = process.argv;
 
 console.log("Arguments:");
@@ -15,11 +16,12 @@ console.log(args);
 function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 360, 
-    height: 220,
+    width: 380, 
+    height: 230,
     frame: false,
-    transparent: false,
-    backgroundColor: "#181516" ,
+    transparent: true,
+    backgroundColor: "#00000000",
+    // backgroundColor: "#181516" ,
     resizable: false   
   });
 
@@ -31,19 +33,16 @@ function createWindow () {
   }));
 
   //Set Context menu
-  var appTray = new Tray(path.join(__dirname, '/static/favicon-16x16.png'));
-  var contextMenu = Menu.buildFromTemplate([
-      {
-          label: 'Show App', click: ()=>{
+  appTray = new Tray(path.join(__dirname, '/static/favicon-16x16.png'));
+  var contextMenu = Menu.buildFromTemplate([{
+          label: 'Show odtr.app', click: ()=>{
             mainWindow.show();
-          }
-      },{
-          label: 'Quit', click: ()=>{
+      }},{
+          label: 'Quit odtr.app', click: ()=>{
               app.isQuiting = true;
               app.quit();
-          }
-      }
-  ])
+      }}
+  ]);
   appTray.setContextMenu(contextMenu);
 
   // Emitted when the window is closed.
@@ -51,21 +50,15 @@ function createWindow () {
     mainWindow = null
   });
 
-  mainWindow.on('minimize', function (event) {
+  /*mainWindow.on('minimize', function (event) {
     event.preventDefault()
     mainWindow.hide();
-  });
+  });*/
 
-  mainWindow.on('show', function () {
+  /*mainWindow.on('show', function () {
     appTray.setHighlightMode('selection');
-    // appTray.setTitle("ODTR App");
     appTray.setToolTip("odtr.App");
-    appTray.displayBalloon({
-      title: "odtr.App",
-      content: "Hello world? I'm just here.",
-      //icon: ""
-    });
-  });
+  });*/
 
   // Open the DevTools.
   if(args.includes("--debug")){

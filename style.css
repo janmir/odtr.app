@@ -1,10 +1,10 @@
 body{
-    width: 360px;
-    height: 220px;
+    /* width: 360px; */
+    /* height: 220px; */
+    width: 380px;
+    height: 230px;
     margin: 0px;
     padding: 0px;
-    background-color: #231F20;
-    /* background-color: rgb(24, 21, 22); */
     overflow: hidden;
     border-radius: 10px;
     color: #fff;
@@ -12,12 +12,32 @@ body{
 
     font-family: 'Raleway', sans-serif;
 }
+
+#root{
+    box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.8);
+    border-radius: 5px;
+    width: 360px;
+    height: 220px;
+    position: absolute;
+    top: 0px;
+    left: 10px;
+    background-color: #231F20;    
+    -webkit-user-select: none;
+    overflow: hidden;
+}
+
+    #root > div{
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
 #loading{
     width: 360px;
     height: 220px;
     position: absolute;
     top: 0px;
-    left: 0px;
+    left: 10px;
     font-size: 13px;
 }
     #loading .text{
@@ -31,10 +51,11 @@ body{
         width: fit-content;
         background-color: #EC3950;
         border-radius: 5px;
-        font-weight: bold;
+        /* font-weight: bold; */
     }
 
     #loading .overlay{
+        border-radius: 5px;
         width: 360px;
         height: 220px;
         position: absolute;
@@ -44,7 +65,7 @@ body{
         opacity: 0.8; 
     }
 
-    #loading img{
+    #loading .image{
         position: absolute;
         top: 35%;
         left: 43%;
@@ -54,21 +75,7 @@ body{
         animation-timing-function: ease-in-out;
         animation-delay: 1s;
     }
-
-#root{
-    width: 360px;
-    height: 220px;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-}
-
-#root > div{
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
+    
 #close{
     position: absolute;
     top: 15px;
@@ -86,6 +93,7 @@ body{
 }
 
 #credit{
+    text-shadow: 1px 1px 0px black;
     font-size: 12px;
     top: 130px;
     color: #aaa;
@@ -108,6 +116,7 @@ body{
 }
 
     .input{
+        color: #444;
         text-indent: 28px;
         outline: none;
         display: block;
@@ -163,7 +172,7 @@ body{
         height: 100%;
         display: inline-block;
     }
-        .button img{
+        .button img, .button svg{
             margin-bottom: 6px;
         }
 
@@ -197,6 +206,7 @@ body{
             margin-left: 0px;
         }
 #qoute{
+    text-shadow: 1px 1px 0px black;
     padding: 10px;
     font-style: italic;
     top: 40%;
@@ -216,6 +226,11 @@ body{
     }
 
 /*************** Animations ***************/
+.out{
+    opacity: 0;
+    transform: scale3d(0.6,0.6,1);
+}
+
 .fade-in{
     animation: fade_in;
     animation-duration: 1s;
