@@ -480,7 +480,7 @@ var fn = {
         return type;
     },
     startUpSchedules: ()=>{
-        //everyday @ 8 am
+        //everyday @ 7 am
         //every weekday every hour
     }
 }
@@ -1147,6 +1147,20 @@ var App = {
                             if(result.since === null){
                                 fn.notificationCenter("time-in");                            
                             }else{
+                                //check if already logged out
+                                /*
+                                {
+                                    "verified": true,
+                                    "username": "jp.miranda",
+                                    "result": true,
+                                    "since": 9,
+                                    "actual": 9.09,
+                                    "record": "Miranda, Jan Paul | Dev 5 | Lenovo | 09:03 AM | 06:08 PM",
+                                    "date": "2017/10/30",
+                                    "execution": 1608.14
+                                }
+                                */
+
                                 //notify for hours to go
                                 fn.notificationCenter("time-remaining", result);
 
@@ -1169,9 +1183,12 @@ var App = {
                                 });
 
                                 currentTime = moment().tz('Asia/Tokyo').transform("+01","mm").format('mm HH * * *');
-                                console.log(currentTime);                              
-                                j = schedule.scheduleJob(currentTime, function(){
-                                    console.log('The answer to life, the universe, and everything!');
+                                futureTime = moment(timeIn, "HH:mm A").transform("+09","HH").format('mm HH * * *');  
+                                
+                                console.log(futureTime);                              
+                                j = schedule.scheduleJob(futureTime, function(){
+                                    fn.notificationCenter("time-out");
+                                    alert('The answer to life, the universe, and everything!');
                                 });
                             }
                         }else{
