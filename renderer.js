@@ -87,7 +87,7 @@ var _ = {
     INIT_DELAY: 3000,
     LOGIN_DELAY: 4000,
     QOUTE_DELAY: 100,
-    NOTIF_DELAY: 100,
+    NOTIF_DELAY: 1000,
 
     OS: "",
     WORK_TIME: 9,
@@ -1246,9 +1246,12 @@ var App = {
 
             }break;
             case 'notif':{
+
                 //check if already logged in
                 App.windowsTransitionOut("#root")
                 .then(()=>{
+
+                    //hide it!
                     application.mainWindow.hide();
 
                     //checkLogin
@@ -1330,7 +1333,13 @@ var App = {
                     App.loading ? m(Loading):null                    
                 ])
             }break;
-            case _.QOUTE:
+            case _.QOUTE:{
+                return m("#root.qoute", [
+                    m(Close),
+                    m(Mini, {which:"Qoute"}),
+                    m(Status)                    
+                ]);
+            }break;
             case _.NOTIF:{
                 return m("#root.notif", [
                     m(Close),
