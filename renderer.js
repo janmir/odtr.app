@@ -692,7 +692,7 @@ var Loading = {
             m(".image", {
                 class: className
             }, svg.icon),
-            m(".text","Loading...")
+            m(".text","No Connection.")
         ])
     }
 }

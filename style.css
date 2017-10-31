@@ -240,12 +240,13 @@ body{
     bottom: 0px;
 }
     #status span{
+        line-height: 17px;
         white-space: nowrap;
         height: 16px;
         color: #aaa;
         background: #666;
         display: inline-block;
-        font-size: 13px;
+        font-size: 11px;
         padding: 3px 10px;
         border-radius: 0 8px 0 0;
         max-width: 200px;
