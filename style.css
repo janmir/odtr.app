@@ -260,6 +260,83 @@ body{
         overflow: hidden;
     }
 
+#countdown{
+    top: 40px;
+    position: absolute;
+    height: 120px;
+    width: 93px;
+    /* background-color: red; */
+    box-shadow: 0px 10px 0px 0px black;
+    border-radius: 6px;
+}
+    .dimmer{
+        opacity: 0.2;
+        position: absolute;
+        height: 50%;
+        width: 100%;
+        background-color: black;
+        top: 3px;
+        left: 0px;
+        border-radius: 6px;
+    }
+
+    .top{
+        position: absolute;
+        height: 50%;
+        background-color: #B10202;
+        top: 3px;
+        left: 0px;
+        border-radius: 6px;
+        width: 100%;
+    }
+
+    .bottom{
+        position: absolute;
+        height: 50%;
+        background-color: #B10202;
+        bottom: -3px;
+        left: 0px;
+        border-radius: 6px;
+        width: 100%;
+    }
+
+    .count{
+        font-family: Roboto;
+        /* vertical-align: middle; */
+        font-size: 90px;
+        line-height: 138px;
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        top: 0px;
+        left: 0px;
+        text-align: center;
+        /* font-weight: bold; */
+        text-shadow: 0px 5px 0px rgba(0, 0, 0, 0.15);
+        color: #eee;
+    }
+
+    .tminus{
+        text-transform: uppercase;
+        line-height: 36px;
+        height: 100%;
+        width: 100%;
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        text-align: center;
+        font-size: 14px;
+        color: #000;
+    }
+
+.timein{
+    font-family: Ayuthaya;
+    color: #AAA;
+    position: absolute;
+    bottom: 19px;
+    text-shadow: 0px 3px black;
+}
+
 /*************** Animations ***************/
 .out{
     opacity: 0;

@@ -67,7 +67,7 @@ var svg = {
 svg.init();
 
 var _ = {
-    STATE: -1, //-1-> init, 0->splash, 1->login, 2->qoute, 3->notifications
+    STATE: 4, //-1-> init, 0->splash, 1->login, 2->qoute, 3->notifications
 
     //States
     SPLASH: -1,
@@ -82,6 +82,7 @@ var _ = {
     LOGIN_DELAY: 3000,
     QOUTE_DELAY: 100,
     NOTIF_DELAY: 1000,
+    DASHBOARD_DELAY: 1000,
 
     OS: "",
     WORK_TIME: 9,
@@ -759,6 +760,20 @@ var Mini = {
                 ])
             }break;
         }
+    }
+}
+
+var Countdown = {
+    count: 8,
+
+    view: (node)=>{
+        return m("#countdown",[
+            m(".top"),
+            m(".bottom"),
+            m(".count", Countdown.count),
+            m(".tminus", "T-minus"),
+            m(".dimmer"),            
+        ]);
     }
 }
 
@@ -1449,22 +1464,20 @@ var App = {
                                 }
                                 //Already timed-out
                                 else{
-                                    let currentTime = moment().tz('Asia/Tokyo').transform("+01","mm").format('HH:mm');
-                                    currentTime = currentTime.split(":");
-
-                                    var rule = new schedule.RecurrenceRule();
-                                    rule.hour = currentTime[0];
-                                    rule.minute = currentTime[1];
-                                    
-                                    var job = schedule.scheduleJob(rule, function(){
-                                        alert('Today is recognized by Rebecca Black!');
-                                    });
+                                    //Nothing to do
                                 }
                             }
                         }else{
                             //handle error
                             console.error(result.message);
                         }
+
+                        //Goto dashboard
+                        setTimeout(()=>{
+                            //then move on
+                            App.changeState(_.DASHBOARD);
+
+                        }, _.DASHBOARD_DELAY);
                     });
                 });
                 
@@ -1526,7 +1539,9 @@ var App = {
             }break;
             case _.DASHBOARD:{
                 return m("#root.dashboard", [
-                    m(Close),             
+                    m(Close),
+                    m(Countdown),
+                    m(".timein", "Time-in: 9:00AM"),                    
                     m(Toast),
                     m(Loading)                                       
                 ]);
