@@ -16,12 +16,6 @@ const WindowsToaster = require('node-notifier').WindowsToaster;
 const isOnline = require('is-online');
 const child = require('child_process').execFile;
 
-function NoInternetError(message = "No internet connection.") {
-    this.name = NoInternetError.name;
-    this.message = (message || "");
-}
-NoInternetError.prototype = new Error();
-
 var urls = {
     WAKE_UP: "https://api.janmir.me/aws-odtr-v2/wakeup",
     LOGIN: "https://api.janmir.me/aws-odtr-v2/login",
@@ -76,16 +70,16 @@ var _ = {
     STATE: -1, //-1-> init, 0->splash, 1->login, 2->qoute, 3->notifications
 
     //States
-    INIT: -1,
-    SPLASH: 0,
+    SPLASH: -1,
+    INIT: 0,
     LOGIN: 1,
     QOUTE: 2,
     NOTIF: 3,
     DASHBOARD: 4,
 
     //global variables
-    INIT_DELAY: 3000,
-    LOGIN_DELAY: 4000,
+    INIT_DELAY: 1000,
+    LOGIN_DELAY: 3000,
     QOUTE_DELAY: 100,
     NOTIF_DELAY: 1000,
 
@@ -94,15 +88,24 @@ var _ = {
     FIRST_HIDE: true,
 
     //Scheduler jobs
-    TIME_OUT_JOB: null
+    TIME_OUT_JOB: null,
+
+    //internet connection
+    ONLINE_CHECK_OVERRIDE: false,
+    INTERNET_CONNECTED: false,
+    ODTR_AVAILABLE: false,
+    ODTR_CHECK_OVERRIDE: false,
 }
 
 var fn = {
     notifier: null,
     maxTry: 5,
     reSpawn: 0,
-    checkCredentials: ()=>{
+    checkCredentials: (timeout=0)=>{
+        Toast.show("Looking for saved credentials.");
+        
         return new Promise((resolve, reject) => {
+            
             let yaml_file = paths.get(paths.CONFIG_FILE);
             let out = {type: fn.checkCredentials.name};
             
@@ -115,9 +118,7 @@ var fn = {
                 }else{
                     out.result = true;
                     out.data = data;
-                }
-                
-                resolve(out);
+                }          
             } catch (error) {
                 out.result = false;
 
@@ -137,8 +138,11 @@ var fn = {
                 }else{
                     out.message = error.message;
                 }
-                resolve(out);
             }
+
+            setTimeout(()=>{
+                resolve(out);
+            },timeout);
         });
     },
     saveCredentials: (json)=>{
@@ -221,16 +225,119 @@ var fn = {
             }
         });
     },
-    online: ()=>{
-        isOnline().then(online => {
-            if(online){
+    wakeupAsync: (timeout=1000)=>{
+        _.ODTR_CHECK_OVERRIDE = true;
+        Toast.show("Checking ODTR availability..");        
+        
+        return new Promise((resolve, reject) => {
+            let counter = 0;
+            let handle = setInterval(function(){
+                if(!_.ODTR_AVAILABLE){
 
-            }else{
-                throw new NoInternetError();
-            }
-        })
-        .catch(error=>{
-            throw error;
+                    if(_.ODTR_CHECK_OVERRIDE || counter == 60 * 10){//per 10 minute check
+                        console.log("Counter: " + counter);
+                        
+                        _.ODTR_CHECK_OVERRIDE = false;
+
+                        m.request({
+                            method: "GET",
+                            url: urls.WAKE_UP,
+                            background: true
+                        })
+                        .then(result => {
+                            if(result.result){    
+                                //hide
+                                Loading.hide();
+
+                                //Stop recheck
+                                clearInterval(handle);
+    
+                                //Set global state
+                                _.ODTR_AVAILABLE = true;
+
+                                //resolve
+                                setTimeout(()=>{
+                                    resolve(true);  
+                                },timeout);
+                            }else{
+                                //display no internet loading screen
+                                Loading.show("ODTR is DOWN!");
+                                Loading.animate();
+
+                                _.ODTR_AVAILABLE = false;
+                            }
+                        })
+                        .catch((error)=>{
+                            console.log("%cError occured on ODTR check!", "color: darkred; font-weight: bold;");
+
+                            Loading.show("ODTR is DOWN!");
+                            Loading.animate();
+                        });
+    
+                        counter = 0;
+                    } else{                        
+                        counter++;
+                    }
+                }else{
+                    //Stop recheck
+                    clearInterval(handle);
+                }
+            }, 1000);
+        });
+    },
+    onlineAsync: (timeout=1000)=>{
+        _.ONLINE_CHECK_OVERRIDE = true;
+        Toast.show("Checking internet connection..");        
+
+        return new Promise((resolve, reject) => {
+            let counter = 0;
+            let handle = setInterval(function(){
+                if(!_.INTERNET_CONNECTED){
+
+                    if(_.ONLINE_CHECK_OVERRIDE || counter == 60 * 5){//per minute check
+                        console.log("Counter: " + counter);
+                        
+                        _.ONLINE_CHECK_OVERRIDE = false;
+
+                        isOnline().then(online => {
+                            if(online){    
+                                //hide
+                                Loading.hide();
+
+                                //Stop recheck
+                                clearInterval(handle);
+    
+                                //Set global state
+                                _.INTERNET_CONNECTED = true;
+
+                                //resolve
+                                setTimeout(()=>{
+                                    resolve(true);  
+                                },timeout);
+                            }else{
+                                //display no internet loading screen
+                                Loading.show();
+                                Loading.animate();
+
+                                _.INTERNET_CONNECTED = false;
+                            }
+                        })
+                        .catch(()=>{
+                            console.log("%cError occured on internet check!", "color: darkred; font-weight: bold;");                            
+
+                            Loading.show();
+                            Loading.animate();
+                    });
+    
+                        counter = 0;
+                    } else{                        
+                        counter++;
+                    }
+                }else{
+                    //Stop recheck
+                    clearInterval(handle);
+                }
+            }, 1000);
         });
     },
     timeInOut: ()=>{
@@ -536,17 +643,18 @@ var fn = {
                         + fn.wordify("number", timeToGo) + " more hour" + ((data > 1)?"s":"") + " to go!"
             }break;
             default:{
-                //hide defaults after 3 secods
-                setTimeout(()=>{
-                    //hide
-                    console.log("Hide all default notifications");
+                if(_.OS === "Windows_NT"){
+                    //hide defaults after 3 secods
+                    setTimeout(()=>{
+                        //hide
+                        console.log("Hide all default notifications");
 
-                    //remove previous
-                    child(paths.getCurrent(paths.NOTIFICATION_EXE), ['-close','1'],function(err, data) {
-                        console.log(err,data);
-                    });
-                },5000);
-                
+                        //remove previous
+                        child(paths.getCurrent(paths.NOTIFICATION_EXE), ['-close','1'],function(err, data) {
+                            console.log(err,data);
+                        });
+                    },5000);
+                }                
             }break;
         }
 
@@ -611,6 +719,19 @@ application.mainWindow.on('hide', function () {
 });*/
 
 /******************* Components *******************/
+var Logo = {
+    onbeforeremove: (node)=>{
+        console.log("onbeforeremove: " + node.dom.id);  
+        return App.transitionOut(node);
+    },
+
+    view: (node)=>{
+        return m("#logo",[
+            svg.logo
+        ]);            
+    }
+}
+
 var Mini = {
     onbeforeremove: (node)=>{
         console.log("onbeforeremove: " + node.dom.id);  
@@ -621,11 +742,6 @@ var Mini = {
         let which = node.attrs.which;
 
         switch(which){
-            case "Logo":{
-                return m("#logo",[
-                    svg.logo
-                ]);
-            }break;
             case "Credits":{
                 return m("#credit", [
                     m("span", "v0.1"),
@@ -667,32 +783,49 @@ var Close = {
 }
 
 var Loading = {
+    message: "No Connection.",
+
+    show: (message=Loading.message)=>{
+        let loading = document.querySelector("#loading");
+        loading.className = "";
+
+        //change text
+        let text = document.querySelector("#loading > .text");
+        text.innerHTML = message;
+    },   
+    hide: ()=>{
+        let loading = document.querySelector("#loading");
+        loading.className = "hide";
+    },   
     onbeforeremove: (node)=>{
         console.log("onbeforeremove: " + node.dom.id);  
         return App.transitionOut(node);
     },
-
+    animate: ()=>{
+        let text = document.querySelector(".text");
+        if(text !== undefined && text !== null){
+            text.className += " shake";
+        }
+        setTimeout(()=>{
+            let text = document.querySelector(".text");
+            if(text !== undefined && text !== null){
+                text.className = "text";
+            }
+        },2000);
+    },
     view: (node)=>{
-        let className = ["pulse", "bounce", "rubberBand", "shake", "flash", "tada"];
+        let className = ["pulse", "bounce", "rubberBand", "flash", "tada"];
         let index = Math.floor(Math.random() * ((className.length-1) + 1));
         
         className = className[index];
-        console.log(index+ ":" + className);
+        //console.log(index+ ":" + className);
 
-        /*return m("#loading", [
-            m(".overlay"),
-            m("img", {
-                src:"./static/icon_big.svg",
-                class: className
-            }),
-            m(".text","Loading...")
-        ])*/
-        return m("#loading", [
+        return m("#loading.hide", [
             m(".overlay"),
             m(".image", {
                 class: className
             }, svg.icon),
-            m(".text","No Connection.")
+            m(".text", Loading.message)
         ])
     }
 }
@@ -805,14 +938,47 @@ var Form = {
     }
 }
 
-var Status = {
-    onbeforeremove: (node)=>{
-        console.log("onbeforeremove: " + node.dom.id);  
-        return App.transitionOut(node);
-    },
+var Toast = {
+    handler: null,
 
+    show: (message)=>{
+        let span = document.querySelector("#toast > span");
+        span.innerHTML = message;
+
+        //show animation
+        anime({
+            targets: "#toast",
+            bottom: [
+                { value: 0, duration: 300, delay: 0, easing: 'easeInOutSine' }
+            ],
+            opacity: [
+                { value: 1, duration: 100, delay: 0, easing: 'easeInOutSine' }
+            ]
+        });
+
+        if(Toast.handler !== null){
+            clearTimeout(Toast.handler);
+        }
+
+        Toast.handler = setTimeout(()=>{
+            Toast.hide();
+        }, 7000);
+    },
+    hide: ()=>{
+        //hide animation
+        anime({
+            targets: "#toast",
+            bottom: [
+                { value: -20, duration: 300, delay: 0, easing: 'easeInOutSine' }
+            ],
+            opacity: [
+                { value: 0, duration: 100, delay: 100, easing: 'easeInOutSine' }
+            ]
+        });
+
+    },
     view: (node)=>{
-        return m("#status",[
+        return m("#toast",[
             m("span", "Status should be written here.")
         ]);
     }    
@@ -823,26 +989,15 @@ var App = {
     password: "",
     user_error: false,
     pass_error: false,
+
     input_disabled: false,
     children: [],
-    loading: false,
+
     holiday: false,
     holiday_description: "",
-    
+
     oninit:(node)=>{
         //Call login to initialize API
-
-        //Ajax
-        /*
-        m.request({
-            method: "GET",
-            url: urls.LOGIN,
-            background: true
-        })
-        .then(function(result) {
-            console.log(result);
-        });
-        */
 
         //Initializations
         _.OS =  os.type();
@@ -952,15 +1107,12 @@ var App = {
 
         switch(id){
             case "yes":{
-
             }break;
             case "no":{
-
             }break;
             case "login":{
                 if(App.username !== "" && App.password !== "" ){
                     App.input_disabled = true;
-                    App.loading = true;
 
                     //Ajax
                     fn.loginCredentials(App.username, App.password)
@@ -976,7 +1128,6 @@ var App = {
                             App.user_error = true;
                             App.pass_error = true;
                             App.input_disabled = false;
-                            App.loading = false;
     
                             m.redraw();
                         }        
@@ -987,7 +1138,6 @@ var App = {
                 }
             }break;
             case "snooze":{
-
             }break;
         }
     },
@@ -1007,31 +1157,9 @@ var App = {
         let className = node.dom.className;
         className = className.split(" ")[0];
 
+        console.log("%cProcess " + className, "color: olive; font-weight: bold;");
+
         switch(className){
-            case 'loading':{
-                fn.checkCredentials()
-                .then((data)=>{
-                    let state = _.SPLASH;
-
-                    if(data.result){
-                        //Save to be used in login
-                        App.username = data.data.credentials.username;
-                        App.password = data.data.credentials.password;
-
-                        //Move on with date
-                        state = _.QOUTE;
-                    }
-
-                    //wait then start
-                    setTimeout(()=>{
-                        App.changeState(state);
-                        //App.changeState(_.NOTIF);
-                    }, _.INIT_DELAY);
-                })
-                .catch((error)=>{
-                    alert(error);
-                });
-            }break;
             case 'splash':{
                 //animate svg
                 anime({
@@ -1068,15 +1196,60 @@ var App = {
                     width: 21,
                     delay: 2500,
                     duration: 500,
-                    easing: 'linear'
+                    easing: 'linear',
+                    complete: ()=>{
+                        //redraw after delay
+                        setTimeout(()=>{
+                            App.changeState(_.INIT);
+                        }, _.INIT_DELAY);
+                    }
                 });
+            }break;
+            case 'loading':{
+                //Check for internet connection
+                console.log("Check internet connection.");
+                fn.onlineAsync().then((inOnline)=>{
+                    if(isOnline){
+                        console.log("Connected!");
+                        //Do wake up call
+                        console.log("Check ODTR connection.");
+                        
+                        fn.wakeupAsync().then((result)=>{
 
-                //redraw after delay
-                setTimeout(()=>{
-                    App.changeState(_.LOGIN);
-                }, _.LOGIN_DELAY);
+                            if(result){
+                                console.log("Alive!");                                
+                                console.log("Check credentials.");
+                                
+                                //Check if there is saved credentials
+                                fn.checkCredentials()
+                                .then((data)=>{
+                                    let state = _.LOGIN;
+
+                                    if(data.result){
+                                        //Save to be used in login
+                                        App.username = data.data.credentials.username;
+                                        App.password = data.data.credentials.password;
+
+                                        //Move on with date
+                                        state = _.QOUTE;
+                                    }
+
+                                    //wait then start
+                                    setTimeout(()=>{
+                                        App.changeState(state);
+                                    }, _.LOGIN_DELAY);
+                                })
+                                .catch((error)=>{
+                                    alert(error);
+                                });
+                            }
+                        });
+                    }
+                });
             }break;
             case 'login':{
+                Toast.show("Please Login..");        
+                
                 //animate svg
                 anime({
                     targets: `.${className} #logo svg`,
@@ -1086,6 +1259,7 @@ var App = {
                     duration: 700
                 });
 
+                //animate form
                 anime({
                     targets: `.${className} #form`,
                     top: 90,
@@ -1121,8 +1295,6 @@ var App = {
                         return 800 + (100 * index);
                     },
                 });
-                
-
             }break;
             case 'qoute':{
                 //slide left
@@ -1230,6 +1402,8 @@ var App = {
                         });
 
                         //redraw after delay
+                        Toast.show("This window will now close..");        
+                        
                         setTimeout(()=>{
                             //then move on
                             App.changeState(_.NOTIF);
@@ -1297,7 +1471,6 @@ var App = {
                 
             }break;
             case 'dashboard':{
-                
             }break;
         }
     },
@@ -1306,21 +1479,24 @@ var App = {
         console.log("%creDraw!", "color: green; font-weight: bold");
         
         switch(_.STATE){
-            case _.INIT:{
-                //check if has credentials
-                return m("#root.loading", [
-                    m(Loading)
-                ]);
-            }break;
             case _.SPLASH:{
                 return m("#root.splash", [
-                    m(Mini, {which:"Logo"}),
+                    m(Logo),
                     m(Mini, {which:"Credits"})
                 ])
             }break;
+            case _.INIT:{
+                //check if has credentials
+                return m("#root.loading", [
+                    m(Logo),
+                    m(Mini, {which:"Credits"}),
+                    m(Toast),                    
+                    m(Loading)                   
+                ]);
+            }break;
             case _.LOGIN:{
                 return m("#root.login", [
-                    m(Mini, {which:"Logo"}),
+                    m(Logo),
                     m(Close),
                     m(Form, {
                         user_error: App.user_error,
@@ -1330,26 +1506,29 @@ var App = {
                     m(Button, {type:[
                         "login"
                     ]}),
-                    App.loading ? m(Loading):null                    
+                    m(Toast),
+                    m(Loading)                   
                 ])
             }break;
             case _.QOUTE:{
                 return m("#root.qoute", [
                     m(Close),
                     m(Mini, {which:"Qoute"}),
-                    m(Status)                    
+                    m(Toast)                    
                 ]);
             }break;
             case _.NOTIF:{
                 return m("#root.notif", [
                     m(Close),
                     m(Mini, {which:"Qoute"}),
-                    m(Status)                    
+                    m(Toast)
                 ]);
             }break;
             case _.DASHBOARD:{
-                return m("#root.notif", [
-                    m(Close)             
+                return m("#root.dashboard", [
+                    m(Close),             
+                    m(Toast),
+                    m(Loading)                                       
                 ]);
             }break;
         }
