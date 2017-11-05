@@ -98,6 +98,7 @@ body{
 }
 
 #credit{
+    opacity: 0;
     text-shadow: 1px 1px 0px black;
     font-size: 12px;
     top: 130px;
@@ -280,6 +281,18 @@ body{
         border-radius: 6px;
     }
 
+    .brighter{
+        pointer-events: none;
+        opacity: 0;
+        position: absolute;
+        height: 50%;
+        width: 100%;
+        background-color: rgb(253, 0, 0);
+        bottom: -3px;
+        left: 0px;
+        border-radius: 6px;
+    }
+
     .top{
         position: absolute;
         height: 50%;
@@ -303,8 +316,8 @@ body{
     .count{
         font-family: Roboto;
         /* vertical-align: middle; */
-        font-size: 90px;
-        line-height: 138px;
+        font-size: 80px;
+        line-height: 140px;
         position: absolute;
         height: 100%;
         width: 100%;
@@ -329,14 +342,86 @@ body{
         color: #000;
     }
 
-.timein{
+    .hour{
+        color: #aaa;
+        text-align: right;
+        text-transform: lowercase;
+        width: 100%;
+        position: absolute;
+        bottom: 50px;
+        right: 13px;
+        font-size: 12px;
+        text-shadow: 0px -1px #5d0000;
+    }
+
+#timein{
+    height: 20px;
+    padding: 5px 10px;
     font-family: Ayuthaya;
     color: #AAA;
     position: absolute;
-    bottom: 19px;
+    bottom: 12px;
     text-shadow: 0px 3px black;
+    border-radius: 6px;
+    overflow: hidden;
+}
+    #timein > .text:nth-child(1){
+        margin-top: 0px; /*0, -23, -46*/
+    }
+    
+    #timein > .text{
+        height: 23px;
+        text-align: center;
+        display: block;
+    }
+
+    #timein > .text > .clock{
+        height: 15px;
+        margin-top: 3px;
+        float: left;
+        margin-right: -5px;
+        margin-left: 4px;
+    }
+
+    #timein > .text > span{
+        margin-left: 5px;
+    }
+
+    .touchable{
+        background-color: black;
+        cursor: pointer;
+    }
+
+    .touchable:hover{
+    }
+
+#time_button{
+    color: gainsboro;
+    font-family: Ayuthaya;
+    position: absolute;
+    bottom: 2px;
+    font-size: 12px;
+    width: 100%;
+    text-align: center;
+    cursor: pointer;
+    text-shadow: 0 1px black;
 }
 
+    #time_button:hover{
+        text-decoration-line: underline;
+        text-decoration-style: dashed;    
+    }
+
+    #time_button > .clock{
+        height: 12px;
+        vertical-align: middle;
+        margin-bottom: 2px;
+    }
+
+    #time_button > .text{
+        margin-left: 4px;
+        display: inline-block;
+    }
 /*************** Animations ***************/
 .out{
     opacity: 0;

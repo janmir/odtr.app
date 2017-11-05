@@ -16,6 +16,7 @@ const WindowsToaster = require('node-notifier').WindowsToaster;
 const isOnline = require('is-online');
 const child = require('child_process').execFile;
 
+/******************* Globals ********************/
 var urls = {
     WAKE_UP: "https://api.janmir.me/aws-odtr-v2/wakeup",
     LOGIN: "https://api.janmir.me/aws-odtr-v2/login",
@@ -64,39 +65,6 @@ var svg = {
         return m.trust(_svg);
     }
 };
-svg.init();
-
-var _ = {
-    STATE: 4, //-1-> init, 0->splash, 1->login, 2->qoute, 3->notifications
-
-    //States
-    SPLASH: -1,
-    INIT: 0,
-    LOGIN: 1,
-    QOUTE: 2,
-    NOTIF: 3,
-    DASHBOARD: 4,
-
-    //global variables
-    INIT_DELAY: 1000,
-    LOGIN_DELAY: 3000,
-    QOUTE_DELAY: 100,
-    NOTIF_DELAY: 1000,
-    DASHBOARD_DELAY: 1000,
-
-    OS: "",
-    WORK_TIME: 9,
-    FIRST_HIDE: true,
-
-    //Scheduler jobs
-    TIME_OUT_JOB: null,
-
-    //internet connection
-    ONLINE_CHECK_OVERRIDE: false,
-    INTERNET_CONNECTED: false,
-    ODTR_AVAILABLE: false,
-    ODTR_CHECK_OVERRIDE: false,
-}
 
 var fn = {
     notifier: null,
@@ -228,7 +196,7 @@ var fn = {
     },
     wakeupAsync: (timeout=1000)=>{
         _.ODTR_CHECK_OVERRIDE = true;
-        Toast.show("Checking ODTR availability..");        
+        Toast.show("Checking ODTR availability..", -1);        
         
         return new Promise((resolve, reject) => {
             let counter = 0;
@@ -246,26 +214,30 @@ var fn = {
                             background: true
                         })
                         .then(result => {
-                            if(result.result){    
-                                //hide
-                                Loading.hide();
-
-                                //Stop recheck
-                                clearInterval(handle);
+                            if(result.result !== undefined){
+                                if(result.result){    
+                                    //hide
+                                    Loading.hide();
     
-                                //Set global state
-                                _.ODTR_AVAILABLE = true;
-
-                                //resolve
-                                setTimeout(()=>{
-                                    resolve(true);  
-                                },timeout);
+                                    //Stop recheck
+                                    clearInterval(handle);
+        
+                                    //Set global state
+                                    _.ODTR_AVAILABLE = true;
+    
+                                    //resolve
+                                    setTimeout(()=>{
+                                        resolve(true);  
+                                    },timeout);
+                                }else{
+                                    //display no internet loading screen
+                                    Loading.show("ODTR is DOWN!");
+                                    Loading.animate();
+    
+                                    _.ODTR_AVAILABLE = false;
+                                }
                             }else{
-                                //display no internet loading screen
-                                Loading.show("ODTR is DOWN!");
-                                Loading.animate();
-
-                                _.ODTR_AVAILABLE = false;
+                                _.ODTR_CHECK_OVERRIDE = true;                                
                             }
                         })
                         .catch((error)=>{
@@ -693,7 +665,38 @@ var fn = {
     },
 }
 
-/**************************************************/
+var _ = {
+    STATE: -1, //-1-> init, 0->splash, 1->login, 2->qoute, 3->notifications
+
+    //States
+    SPLASH: -1,
+    INIT: 0,
+    LOGIN: 1,
+    QOUTE: 2,
+    NOTIF: 3,
+    DASHBOARD: 4,
+
+    //global variables
+    INIT_DELAY: 1000,
+    LOGIN_DELAY: 3000,
+    QOUTE_DELAY: 100,
+    NOTIF_DELAY: 1000,
+    DASHBOARD_DELAY: 1000,
+
+    OS: "",
+    WORK_TIME: 9,
+    FIRST_HIDE: true,
+
+    //Scheduler jobs
+    TIME_OUT_JOB: null,
+
+    //internet connection
+    ONLINE_CHECK_OVERRIDE: false,
+    INTERNET_CONNECTED: false,
+    ODTR_AVAILABLE: false,
+    ODTR_CHECK_OVERRIDE: false,
+}
+/******************* Listeners ********************/
 application.mainWindow.on('hide', function () {
     if(_.FIRST_HIDE){
         fn.notificationCenter("I'm just hiding here,\nunder the system tray.");
@@ -704,20 +707,6 @@ application.mainWindow.on('hide', function () {
     let root = document.getElementById("root");
     root.style = "opacity: 1; transform: scaleX(1) scaleY(1);";
 });
-/*application.mainWindow.on('show', function () {
-    console.log("showing app...");
-
-    let root = document.getElementById("root");
-    root.style = "opacity: 0; transform: scaleX(0.6) scaleY(0.6);";
-    
-    //check if already logged in
-    setTimeout(()=>{
-        App.windowsTransitionIn("#root")
-        .then(()=>{
-            console.log("app shown...");
-        });
-    },200);
-});*/
 
 /******************* Components *******************/
 var Logo = {
@@ -763,16 +752,71 @@ var Mini = {
     }
 }
 
+var TimeB = {
+    view: (node)=>{
+        return m("#time_button",[
+            m("img.clock", {src: "./static/clock.svg"}),
+            m("span.text", "Time-in")
+        ]);
+    }
+}
+
 var Countdown = {
-    count: 8,
+    count: 0,
+
+    tick: ()=>{
+        //flash first
+        anime({
+            targets: "#countdown > .dimmer",
+            opacity: [
+                { value: 0, duration: 100, delay: 0, easing: 'easeInOutSine' },
+                { value: 0.3, duration: 100, delay: 0, easing: 'easeInOutSine' }
+            ]
+        });
+
+        anime({
+            targets: "#countdown > .brighter",
+            opacity: [
+                { value: 0.2, duration: 50, delay: 80, easing: 'easeInOutSine' },
+                { value: 0, duration: 200, delay: 0, easing: 'easeInOutSine' }
+            ]
+        });
+
+        anime({
+            targets: "#countdown > .count",
+            opacity: [
+                { value: 0, duration: 100, delay: 0, easing: 'easeInOutSine' },
+                { value: 1, duration: 50, delay: 0, easing: 'easeInOutSine' }
+            ],
+            complete: ()=>{
+                if(Countdown.count > 9){
+                    Countdown.count = 0;
+                }
+    
+                //Change text
+                document.querySelector("#countdown > .count").innerHTML = Countdown.count++;
+            }
+        });
+
+    },
+
+    oncreate: ()=>{
+        //start animation
+        setInterval(()=>{
+            Countdown.tick();
+        },1000);
+    },
 
     view: (node)=>{
         return m("#countdown",[
             m(".top"),
             m(".bottom"),
             m(".count", Countdown.count),
+            m(".hour", "HR"),
             m(".tminus", "T-minus"),
+            //m(TimeB),
             m(".dimmer"),            
+            m(".brighter"),            
         ]);
     }
 }
@@ -956,7 +1000,7 @@ var Form = {
 var Toast = {
     handler: null,
 
-    show: (message)=>{
+    show: (message, timeout=7000)=>{
         let span = document.querySelector("#toast > span");
         span.innerHTML = message;
 
@@ -975,9 +1019,11 @@ var Toast = {
             clearTimeout(Toast.handler);
         }
 
-        Toast.handler = setTimeout(()=>{
-            Toast.hide();
-        }, 7000);
+        if(timeout >= 0){
+            Toast.handler = setTimeout(()=>{
+                Toast.hide();
+            }, timeout);
+        }
     },
     hide: ()=>{
         //hide animation
@@ -1012,8 +1058,9 @@ var App = {
     holiday_description: "",
 
     oninit:(node)=>{
-        //Call login to initialize API
-
+        //Init SVG assets
+        svg.init();
+        
         //Initializations
         _.OS =  os.type();
 
@@ -1054,7 +1101,7 @@ var App = {
 
         //fade in
         newChild.forEach(el => {
-            if(el.classList === undefined)
+            if(el.classList === undefined || el.id === "credit")
                 return;
             el.classList.add(animation);
         });
@@ -1176,26 +1223,35 @@ var App = {
 
         switch(className){
             case 'splash':{
+                let baseTimeout = 2000;
                 //animate svg
                 anime({
                     targets: `.${className} #logo #swirl`,
                     strokeDashoffset: [anime.setDashoffset, 0],
                     easing: 'easeInOutSine',
                     duration: 1000,
-                    delay: 100
+                    delay: baseTimeout
                 });
                 anime({
                     targets: `.${className} #logo #line`,
                     strokeDashoffset: [anime.setDashoffset, 0],
                     easing: 'easeInOutSine',
                     duration: 200,
-                    delay: 900
+                    delay: baseTimeout + 800
+                });
+                anime({
+                    targets: `.${className} #credit`,
+                    opacity: 1,
+                    easing: 'easeInOutSine',
+                    duration: 500,
+                    delay: baseTimeout
                 });
 
                 //animate text
                 var obj = { charged: 0 };
                 var el = document.querySelector(`.${className} #credit span`);
                 anime({
+                    delay: baseTimeout,
                     targets: obj,
                     charged: 100,
                     round: 1,
@@ -1209,7 +1265,7 @@ var App = {
                 anime({
                     targets: el,
                     width: 21,
-                    delay: 2500,
+                    delay: baseTimeout + 2400,
                     duration: 500,
                     easing: 'linear',
                     complete: ()=>{
@@ -1321,6 +1377,9 @@ var App = {
                     duration: 500
                 });
 
+                //redraw after delay
+                Toast.show("Holiday Check..");  
+
                 let promises = [];
 
                 //Check credentials
@@ -1420,6 +1479,9 @@ var App = {
                         Toast.show("This window will now close..");        
                         
                         setTimeout(()=>{
+                            //hide Toast
+                            Toast.hide();
+                    
                             //then move on
                             App.changeState(_.NOTIF);
 
@@ -1442,6 +1504,9 @@ var App = {
 
                     //hide it!
                     application.mainWindow.hide();
+
+                    //redraw after delay
+                    Toast.show("Check Login Status..");  
 
                     //checkLogin
                     fn.checkLogin(App.username, App.password)
@@ -1541,7 +1606,17 @@ var App = {
                 return m("#root.dashboard", [
                     m(Close),
                     m(Countdown),
-                    m(".timein", "Time-in: 9:00AM"),                    
+                    m("#timein.touchable", [
+                        m(".text", [
+                            m("img.clock", {src: "./static/clock.svg"}),
+                            m("span", "Time-in")
+                        ]),
+                        m(".text", "In: --:--"),
+                        m(".text", [
+                            m("img.clock", {src: "./static/clock.svg"}),
+                            m("span", "Time-out")
+                        ]),
+                    ]),                    
                     m(Toast),
                     m(Loading)                                       
                 ]);
