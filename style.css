@@ -247,13 +247,15 @@ body{
     opacity: 0;
 }
     #toast span{
+        letter-spacing: 0.4px;
+        font-style: italic;
         line-height: 17px;
         white-space: nowrap;
         height: 16px;
-        color: #aaa;
-        background: #666;
+        color: gray;
+        background-color: #111;
         display: inline-block;
-        font-size: 11px;
+        font-size: 10px;
         padding: 3px 10px;
         border-radius: 0 8px 0 0;
         max-width: 200px;
@@ -262,12 +264,12 @@ body{
     }
 
 #countdown{
-    top: 40px;
+    top: 25px;
     position: absolute;
     height: 120px;
     width: 93px;
     /* background-color: red; */
-    box-shadow: 0px 10px 0px 0px black;
+    box-shadow: 0px 10px 0px 0px rgba(0,0,0,0.5);
     border-radius: 6px;
 }
     .dimmer{
@@ -287,7 +289,7 @@ body{
         position: absolute;
         height: 50%;
         width: 100%;
-        background-color: rgb(253, 0, 0);
+        background-color: rgb(253, 17, 0);
         bottom: -3px;
         left: 0px;
         border-radius: 6px;
@@ -313,10 +315,30 @@ body{
         width: 100%;
     }
 
+    .bottom_under{
+        position: absolute;
+        height: 50%;
+        background-color: #670c0c;
+        bottom: -5px;
+        left: 0px;
+        border-radius: 6px;
+        width: 100%;
+    }
+
+    .bottom_under_under{
+        position: absolute;
+        height: 50%;
+        background-color: #3d0101;
+        bottom: -8px;
+        left: 0px;
+        border-radius: 6px;
+        width: 100%;
+    }
+
     .count{
         font-family: Roboto;
         /* vertical-align: middle; */
-        font-size: 80px;
+        font-size: 90px;
         line-height: 140px;
         position: absolute;
         height: 100%;
@@ -357,10 +379,10 @@ body{
 #timein{
     height: 20px;
     padding: 5px 10px;
-    font-family: Ayuthaya;
+    /* font-family: Ayuthaya; */
     color: #AAA;
     position: absolute;
-    bottom: 12px;
+    bottom: 20px;
     text-shadow: 0px 3px black;
     border-radius: 6px;
     overflow: hidden;
@@ -370,9 +392,12 @@ body{
     }
     
     #timein > .text{
+        font-size: 12px;
         height: 23px;
         text-align: center;
         display: block;
+        line-height: 21px;
+        font-weight: bold;
     }
 
     #timein > .text > .clock{
@@ -384,7 +409,7 @@ body{
     }
 
     #timein > .text > span{
-        margin-left: 5px;
+        margin-left: 8px;
     }
 
     .touchable{

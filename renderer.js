@@ -777,7 +777,7 @@ var Countdown = {
         anime({
             targets: "#countdown > .brighter",
             opacity: [
-                { value: 0.2, duration: 50, delay: 80, easing: 'easeInOutSine' },
+                { value: 0.5, duration: 50, delay: 60, easing: 'easeInOutSine' },
                 { value: 0, duration: 200, delay: 0, easing: 'easeInOutSine' }
             ]
         });
@@ -810,6 +810,8 @@ var Countdown = {
     view: (node)=>{
         return m("#countdown",[
             m(".top"),
+            m(".bottom_under_under"),
+            m(".bottom_under"),
             m(".bottom"),
             m(".count", Countdown.count),
             m(".hour", "HR"),
@@ -1270,7 +1272,7 @@ var App = {
                     easing: 'linear',
                     complete: ()=>{
                         //redraw after delay
-                        setTimeout(()=>{
+                        setTimeout(()=>{                                                                    
                             App.changeState(_.INIT);
                         }, _.INIT_DELAY);
                     }
@@ -1306,9 +1308,12 @@ var App = {
                                     }
 
                                     //wait then start
-                                    setTimeout(()=>{
+                                    setTimeout(()=>{                
                                         App.changeState(state);
                                     }, _.LOGIN_DELAY);
+
+                                    //redraw after delay
+                                    Toast.show("Do useless checks..");  
                                 })
                                 .catch((error)=>{
                                     alert(error);
@@ -1369,16 +1374,13 @@ var App = {
             }break;
             case 'qoute':{
                 //slide left
-                let divs = document.querySelectorAll(`.${className} .fade-out`);
+                /*let divs = document.querySelectorAll(`.${className} .fade-out`);
                 anime({
                     targets: divs,
-                    left: 0,
-                    easing: 'easeInOutSine',
+                    left: 50,
+                    easing: 'easeOutQuad',
                     duration: 500
-                });
-
-                //redraw after delay
-                Toast.show("Holiday Check..");  
+                });*/
 
                 let promises = [];
 
@@ -1625,5 +1627,5 @@ var App = {
     }
 }
 
-//Mount it!
+//Mount it, baby mount it!
 m.mount(document.body, App);
