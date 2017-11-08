@@ -70,6 +70,14 @@ var fn = {
     notifier: null,
     maxTry: 5,
     reSpawn: 0,
+
+    //handles
+    handle_loginCredentials: 0,
+    handle_wakeupAsync: 0,
+    handle_onlineAsync: 0,
+    handle_timeInOut: 0,
+    handle_checkLogin: 0,
+
     checkCredentials: (timeout=0)=>{
         Toast.show("Looking for saved credentials.");
         
@@ -135,17 +143,16 @@ var fn = {
             let out = {type: fn.loginCredentials.name};
             
             try {
-                let handle = 0;
                 let counter = 0;
                 let skip = false;
 
-                handle = setInterval(()=>{
+                handle_loginCredentials = setInterval(()=>{
                     counter++;
                     console.log("Trying to Login: " + counter);
 
                     if(counter > fn.maxTry){
                         //clear
-                        clearInterval(handle);
+                        clearInterval(handle_loginCredentials);
 
                         //alert
                         out.result = false;
@@ -175,7 +182,7 @@ var fn = {
                                 out = Object.assign({}, out, result);
 
                                 //clear
-                                clearInterval(handle);
+                                clearInterval(handle_loginCredentials);
 
                                 //return
                                 resolve(out);
@@ -200,7 +207,7 @@ var fn = {
         
         return new Promise((resolve, reject) => {
             let counter = 0;
-            let handle = setInterval(function(){
+            handle_wakeupAsync = setInterval(function(){
                 if(!_.ODTR_AVAILABLE){
 
                     if(_.ODTR_CHECK_OVERRIDE || counter == 60 * 10){//per 10 minute check
@@ -220,7 +227,7 @@ var fn = {
                                     Loading.hide();
     
                                     //Stop recheck
-                                    clearInterval(handle);
+                                    clearInterval(handle_wakeupAsync);
         
                                     //Set global state
                                     _.ODTR_AVAILABLE = true;
@@ -253,7 +260,7 @@ var fn = {
                     }
                 }else{
                     //Stop recheck
-                    clearInterval(handle);
+                    clearInterval(handle_wakeupAsync);
                 }
             }, 1000);
         });
@@ -264,7 +271,7 @@ var fn = {
 
         return new Promise((resolve, reject) => {
             let counter = 0;
-            let handle = setInterval(function(){
+            handle_onlineAsync = setInterval(function(){
                 if(!_.INTERNET_CONNECTED){
 
                     if(_.ONLINE_CHECK_OVERRIDE || counter == 60 * 5){//per minute check
@@ -278,7 +285,7 @@ var fn = {
                                 Loading.hide();
 
                                 //Stop recheck
-                                clearInterval(handle);
+                                clearInterval(handle_onlineAsync);
     
                                 //Set global state
                                 _.INTERNET_CONNECTED = true;
@@ -308,7 +315,7 @@ var fn = {
                     }
                 }else{
                     //Stop recheck
-                    clearInterval(handle);
+                    clearInterval(handle_onlineAsync);
                 }
             }, 1000);
         });
@@ -320,13 +327,13 @@ var fn = {
             try {
                 let counter = 0;
                 let skip = false;
-                let handle = setInterval(()=>{
+                handle_timeInOut = setInterval(()=>{
                     counter++;
                     console.log("Trying to timein/timeout: " + counter);
 
                     if(counter > fn.maxTry){
                         //clear
-                        clearInterval(handle);
+                        clearInterval(handle_timeInOut);
 
                         //alert
                         out.result = false;
@@ -356,7 +363,7 @@ var fn = {
                                 out = Object.assign({}, out, result);
 
                                 //clear
-                                clearInterval(handle);
+                                clearInterval(handle_timeInOut);
 
                                 //return
                                 resolve(out);
@@ -403,17 +410,16 @@ var fn = {
             let out = {type: fn.checkLogin.name};
             
             try {
-                let handle = 0;
                 let counter = 0;
                 let skip = false;
 
-                handle = setInterval(()=>{
+                handle_checkLogin = setInterval(()=>{
                     counter++;
                     console.log("Trying to check: " + counter);
 
                     if(counter > fn.maxTry){
                         //clear
-                        clearInterval(handle);
+                        clearInterval(handle_checkLogin);
 
                         //alert
                         out.result = false;
@@ -443,7 +449,7 @@ var fn = {
                                 out = Object.assign({}, out, result);
 
                                 //clear
-                                clearInterval(handle);
+                                clearInterval(handle_checkLogin);
 
                                 //return
                                 resolve(out);
@@ -570,7 +576,7 @@ var fn = {
                 }
                 
                 notification = {
-                    title: 'Notification:',
+                    title: '(☞ﾟ∀ﾟ)☞',
                     icon: icon,
                     sound: Notification.Reminder,//"Notification.Reminder",//"Notification.IM", Notification.SMS, Notification.Mail
                     wait: true,
@@ -583,7 +589,7 @@ var fn = {
                     fn.notifier = NodeNotifier;
                 }
                 notification = {
-                    title: 'Notification:',
+                    title: '(☞ﾟ∀ﾟ)☞',
                     icon: icon,
                     sound: "Hero",
                     timeout: time,
@@ -608,12 +614,11 @@ var fn = {
                 message = `Phewwww! What a day! You can time out now.`;
             }break;
             case "time-remaining":{
-                let timeToGo = _.WORK_TIME - data.since;
-                let timeIn = data.record.split("|")
-                timeIn = timeIn[timeIn.length - 1].trim();
+                let timeToGo = _.TIME_REMAINING;
+                let timeIn = _.TIME_IN;
 
-                message = "Hello there! your time-in was \n" + timeIn + ", " 
-                        + fn.wordify("number", timeToGo) + " more hour" + ((data > 1)?"s":"") + " to go!"
+                message = "Hello there! your time-in was " + timeIn + ", " 
+                        + fn.wordify("number", timeToGo) + " more hour" + ((timeToGo > 1)?"s":"") + " to go!"
             }break;
             default:{
                 if(_.OS === "Windows_NT"){
@@ -644,8 +649,17 @@ var fn = {
 
         return type;
     },
+    resetAllFlags: ()=>{
+        console.log("%cA reset was performed.", "color: green; font-weight: bold;");
+        _.TIMED_IN = false;
+        _.TIMED_OUT = false;
+        _.TIME_REMAINING = 0;
+        _.TIME_IN = null;
+    },
     startUpSchedules: ()=>{
-        //everyday @ 7 am
+        //everyday @ 12 am reset all
+        schedule.scheduleJob("0 0 * * *", fn.resetAllFlags);
+
         //every weekday every hour
     },
     scheduleTimeout: (result)=>{
@@ -654,14 +668,25 @@ var fn = {
             timeIn = timeIn[timeIn.length - 1].trim();
             
             let futureTime = moment(timeIn, "HH:mm A").transform("+09","HH").format('mm HH * * *');  
+            let everyTime = moment(timeIn, "HH:mm A").transform("+09","HH").format('mm * * * *');  
             
             console.log(futureTime);
     
             _.TIME_OUT_JOB = schedule.scheduleJob(futureTime, function(){
                 fn.notificationCenter("time-out");
+                
+                TimeInButtons.setTime(2);                                                                      
+                
                 alert('The answer to life, the universe, and everything!');
             });
+
+            _.TIME_INCREMENT_JOB = schedule.scheduleJob(everyTime, function(){
+                let timeToGo = --_.TIME_REMAINING;
+                Countdown.setTime(timeToGo); 
+            });
         }
+
+        return 0;
     },
 }
 
@@ -689,17 +714,26 @@ var _ = {
 
     //Scheduler jobs
     TIME_OUT_JOB: null,
-
+    TIME_INCREMENT_JOB: null,
+    
     //internet connection
     ONLINE_CHECK_OVERRIDE: false,
     INTERNET_CONNECTED: false,
     ODTR_AVAILABLE: false,
     ODTR_CHECK_OVERRIDE: false,
+
+    //FLAGS of the STATES
+    TIMED_IN: false,
+    TIMED_OUT: false,
+    TIME_REMAINING: 0,
+    TIME_IN: null,
+    TIME_OUT: null,
+    WORK_TOTAL: null,
 }
 /******************* Listeners ********************/
 application.mainWindow.on('hide', function () {
     if(_.FIRST_HIDE){
-        fn.notificationCenter("I'm just hiding here,\nunder the system tray.");
+        fn.notificationCenter("I'm just hiding here under the system tray.");
         _.FIRST_HIDE = false;
     }
 
@@ -761,10 +795,72 @@ var TimeB = {
     }
 }
 
+var TimeInButtons = {
+    time_in: "",
+    time_out: "",
+    work_time: 0,
+
+    state: 0,
+
+    setTime: (state)=>{
+        switch(state){
+            case 0:{ //time-in button
+                TimeInButtons.state = 0;
+            }break;
+            case 1:{ //time-in display
+                TimeInButtons.state = 1;
+                TimeInButtons.time_in = _.TIME_IN || "--:--";
+            }break;
+            case 2:{ //time-out button
+                TimeInButtons.state = 2;
+            }break;
+            case 2:{ //work-time display
+                TimeInButtons.state = 3;
+                TimeInButtons.time_out = _.TIME_OUT || "--:--";
+                TimeInButtons.work_time = _.WORK_TOTAL || "???";
+            }break;
+        }
+
+        TimeInButtons.animate();
+    },
+    animate: ()=>{
+        let margin = TimeInButtons.state * 23 * -1;
+        anime({
+            targets: "#timein > .text:nth-child(1)",
+            marginTop: [
+                { value: margin, duration: 100, delay: 2000, easing: 'easeInOutSine' }
+            ]
+        });
+    },
+    oncreate: ()=>{
+        TimeInButtons.animate();
+    },
+    view: ()=>{
+        return m("#timein",{
+            class: TimeInButtons.state == 0 || TimeInButtons == 2 ? ".touchable": ""
+        },[
+            m(".text", [
+                m("img.clock", {src: "./static/clock.svg"}),
+                m("span", "Time-in")
+            ]),
+            m(".text", "Time-In: " + TimeInButtons.time_in),
+            m(".text", [
+                m("img.clock", {src: "./static/clock.svg"}),
+                m("span", "Time-out")
+            ]),
+            m(".text", "Work Time: " + TimeInButtons.work_time),
+        ]);
+    }
+}
+
 var Countdown = {
     count: 0,
 
-    tick: ()=>{
+    setTime: (remaining)=>{
+        _.TIME_REMAINING = remaining;
+    },
+
+    tick: (time)=>{
         //flash first
         anime({
             targets: "#countdown > .dimmer",
@@ -789,12 +885,11 @@ var Countdown = {
                 { value: 1, duration: 50, delay: 0, easing: 'easeInOutSine' }
             ],
             complete: ()=>{
-                if(Countdown.count > 9){
-                    Countdown.count = 0;
+                if(Countdown.count >= 0){        
+                    //Change text
+                    Countdown.count += time;
+                    document.querySelector("#countdown > .count").innerHTML = Countdown.count;
                 }
-    
-                //Change text
-                document.querySelector("#countdown > .count").innerHTML = Countdown.count++;
             }
         });
 
@@ -802,9 +897,21 @@ var Countdown = {
 
     oncreate: ()=>{
         //start animation
-        setInterval(()=>{
-            Countdown.tick();
-        },1000);
+        setTimeout(()=>{
+            let count = 0;
+            let rem = Countdown.count - _.TIME_REMAINING;
+            let time = rem >= 0 ? -1:1;
+            rem = Math.abs(rem);
+    
+            let handle = setInterval(()=>{
+                if(count < rem){
+                    Countdown.tick(time);
+                    count++;
+                }else{
+                    clearInterval(handle);
+                }
+            }, 400);
+        },1000);        
     },
 
     view: (node)=>{
@@ -1066,6 +1173,9 @@ var App = {
         //Initializations
         _.OS =  os.type();
 
+        //Startup items
+        fn.startUpSchedules();
+
         //Logging
         let data = {
             "directory": application.getPath("userData"),
@@ -1086,7 +1196,7 @@ var App = {
         node.dom.classList.add(animation)
         
         return new Promise(function(resolve) {
-            setTimeout(resolve, 500)
+            setTimeout(resolve, 300)
         });
     },
 
@@ -1178,6 +1288,8 @@ var App = {
                 if(App.username !== "" && App.password !== "" ){
                     App.input_disabled = true;
 
+                    Toast.show("Logging in..");
+                    
                     //Ajax
                     fn.loginCredentials(App.username, App.password)
                     .then(function(result) {
@@ -1188,11 +1300,13 @@ var App = {
                                 App.changeState(_.QOUTE);
                             }, _.QOUTE_DELAY);
 
+                            Toast.show("Login successful..");
                         }else{
                             App.user_error = true;
                             App.pass_error = true;
                             App.input_disabled = false;
     
+                            Toast.show("Login error..");
                             m.redraw();
                         }        
                     });
@@ -1324,7 +1438,7 @@ var App = {
                 });
             }break;
             case 'login':{
-                Toast.show("Please Login..");        
+                // Toast.show("Please Login..");        
                 
                 //animate svg
                 anime({
@@ -1373,6 +1487,8 @@ var App = {
                 });
             }break;
             case 'qoute':{
+                Toast.show("Doing secret background stuff..");
+
                 //slide left
                 /*let divs = document.querySelectorAll(`.${className} .fade-out`);
                 anime({
@@ -1508,7 +1624,7 @@ var App = {
                     application.mainWindow.hide();
 
                     //redraw after delay
-                    Toast.show("Check Login Status..");  
+                    Toast.show("Checking Login Status..");  
 
                     //checkLogin
                     fn.checkLogin(App.username, App.password)
@@ -1516,13 +1632,26 @@ var App = {
                         console.log(result);
 
                         if(result.result){
-                            if(result.since === null){
-                                fn.notificationCenter("time-in");                            
-                            }else{
-                                //check if already logged out
+                            if(result.since === null){ //Not yet timed in
+                                fn.notificationCenter("time-in");                    
+
+                                //reset
+                                fn.resetAllFlags();
+                                
+                            }else{ //check if already timed out
+                                _.TIMED_IN = true;
 
                                 //Not yet timed-out
                                 if(result.actual === undefined){
+                                    //Set Time remaining
+                                    let timeToGo = _.WORK_TIME - result.since;
+                                    //Set Time in
+                                    let timeIn = result.record.split("|")
+                                    _.TIME_IN = timeIn[timeIn.length - 1].trim();
+
+                                    Countdown.setTime(timeToGo);  
+                                    TimeInButtons.setTime(1);                                                                      
+
                                     //notify for hours to go
                                     fn.notificationCenter("time-remaining", result);
 
@@ -1532,6 +1661,7 @@ var App = {
                                 //Already timed-out
                                 else{
                                     //Nothing to do
+                                    _.TIMED_OUT = true;
                                 }
                             }
                         }else{
@@ -1608,17 +1738,7 @@ var App = {
                 return m("#root.dashboard", [
                     m(Close),
                     m(Countdown),
-                    m("#timein.touchable", [
-                        m(".text", [
-                            m("img.clock", {src: "./static/clock.svg"}),
-                            m("span", "Time-in")
-                        ]),
-                        m(".text", "In: --:--"),
-                        m(".text", [
-                            m("img.clock", {src: "./static/clock.svg"}),
-                            m("span", "Time-out")
-                        ]),
-                    ]),                    
+                    m(TimeInButtons),                    
                     m(Toast),
                     m(Loading)                                       
                 ]);

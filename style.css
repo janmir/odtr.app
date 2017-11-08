@@ -21,9 +21,11 @@ body{
     position: absolute;
     top: 0px;
     left: 10px;
-    background-color: #231F20;    
     -webkit-user-select: none;
     overflow: hidden;
+    /* background: radial-gradient(ellipse at center, rgba(125,126,125,0) 0%,rgba(124,125,124,0) 1%,rgba(14,14,14,1) 100%); */
+    background: radial-gradient(ellipse at center, rgba(125,126,125,0) 0%,rgba(124,125,124,0) 1%,rgba(14,14,14,0.5) 100%);
+    background-color: #231F20;    
 }
 
     #root > div{
@@ -253,21 +255,21 @@ body{
         white-space: nowrap;
         height: 16px;
         color: gray;
-        background-color: #111;
+        background-color: #0a0a0a;
         display: inline-block;
         font-size: 10px;
         padding: 3px 10px;
-        border-radius: 0 8px 0 0;
+        border-radius: 0 5px 0 8px;
         max-width: 200px;
         text-overflow: ellipsis;
         overflow: hidden;
     }
 
 #countdown{
-    top: 25px;
+    top: 45px;
     position: absolute;
-    height: 120px;
-    width: 93px;
+    height: 100px;
+    width: 79px;
     /* background-color: red; */
     box-shadow: 0px 10px 0px 0px rgba(0,0,0,0.5);
     border-radius: 6px;
@@ -338,8 +340,8 @@ body{
     .count{
         font-family: Roboto;
         /* vertical-align: middle; */
-        font-size: 90px;
-        line-height: 140px;
+        font-size: 80px;
+        line-height: 119px;
         position: absolute;
         height: 100%;
         width: 100%;
@@ -360,18 +362,18 @@ body{
         top: 0px;
         left: 0px;
         text-align: center;
-        font-size: 14px;
+        font-size: 11px;
         color: #000;
     }
 
     .hour{
-        color: #aaa;
+        color: #fff;
         text-align: right;
         text-transform: lowercase;
         width: 100%;
         position: absolute;
         bottom: 50px;
-        right: 13px;
+        right: 8px;
         font-size: 12px;
         text-shadow: 0px -1px #5d0000;
     }
@@ -383,7 +385,7 @@ body{
     color: #AAA;
     position: absolute;
     bottom: 20px;
-    text-shadow: 0px 3px black;
+    text-shadow: 0px -2px black;
     border-radius: 6px;
     overflow: hidden;
 }
@@ -394,7 +396,7 @@ body{
     #timein > .text{
         font-size: 12px;
         height: 23px;
-        text-align: center;
+        text-align: left;
         display: block;
         line-height: 21px;
         font-weight: bold;
@@ -405,7 +407,7 @@ body{
         margin-top: 3px;
         float: left;
         margin-right: -5px;
-        margin-left: 4px;
+        margin-left: 15px;
     }
 
     #timein > .text > span{
@@ -413,11 +415,12 @@ body{
     }
 
     .touchable{
-        background-color: black;
         cursor: pointer;
+        text-shadow: 0px 2px black;
     }
 
     .touchable:hover{
+        text-decoration: dashed underline;
     }
 
 #time_button{
@@ -469,7 +472,7 @@ body{
 
 .fade-out{
     animation: fade_out;
-    animation-duration: 0.5s;
+    animation-duration: 0.3s;
 }
 @keyframes fade_out {
     from {
@@ -483,7 +486,8 @@ body{
 
 .slide-in{
     animation: slide_in;
-    animation-duration: 1s;
+    animation-duration: 0.5s;
+    animation-timing-function: ease-out;
 }
 @keyframes slide_in {
     from {
