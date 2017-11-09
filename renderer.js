@@ -15,6 +15,7 @@ const NodeNotifier = require('node-notifier');
 const WindowsToaster = require('node-notifier').WindowsToaster;
 const isOnline = require('is-online');
 const child = require('child_process').execFile;
+const emoticons = require('cool-ascii-faces');
 
 /******************* Globals ********************/
 var urls = {
@@ -78,7 +79,7 @@ var fn = {
     handle_timeInOut: 0,
     handle_checkLogin: 0,
 
-    checkCredentials: (timeout=0)=>{
+    checkCredentials: (timeout=1000)=>{
         Toast.show("Looking for saved credentials.");
         
         return new Promise((resolve, reject) => {
@@ -382,7 +383,9 @@ var fn = {
             }
         });
     },
-    holidayToday: ()=>{
+    holidayToday: (timeout=500)=>{
+        Toast.show("Is it holiday yet?");
+
         return new Promise((resolve, reject) => {
             let out = {type: fn.holidayToday.name};
             try {
@@ -394,7 +397,9 @@ var fn = {
                 .then(function(result) {
                     out = Object.assign({}, out, result);
 
-                    resolve(out);
+                    setTimeout(()=>{
+                        resolve(true);  
+                    },timeout);
                 });
 
             } catch (error) {
@@ -563,6 +568,7 @@ var fn = {
         let message = type;
         let time = 60 * 10;
         let icon = paths.getStatic(paths.NOTIFICATION_ICON);
+        let title = emoticons();
 
         //OS specific settings
         switch(_.OS){
@@ -576,7 +582,7 @@ var fn = {
                 }
                 
                 notification = {
-                    title: '(☞ﾟ∀ﾟ)☞',
+                    title: title,
                     icon: icon,
                     sound: Notification.Reminder,//"Notification.Reminder",//"Notification.IM", Notification.SMS, Notification.Mail
                     wait: true,
@@ -589,7 +595,7 @@ var fn = {
                     fn.notifier = NodeNotifier;
                 }
                 notification = {
-                    title: '(☞ﾟ∀ﾟ)☞',
+                    title: title,
                     icon: icon,
                     sound: "Hero",
                     timeout: time,
@@ -682,7 +688,11 @@ var fn = {
 
             _.TIME_INCREMENT_JOB = schedule.scheduleJob(everyTime, function(){
                 let timeToGo = --_.TIME_REMAINING;
-                Countdown.setTime(timeToGo); 
+
+                Countdown.setTime(timeToGo);
+                Countdown.animate();
+
+                console.log("Hourly Job.");
             });
         }
 
@@ -703,7 +713,7 @@ var _ = {
 
     //global variables
     INIT_DELAY: 1000,
-    LOGIN_DELAY: 3000,
+    LOGIN_DELAY: 1000,
     QOUTE_DELAY: 100,
     NOTIF_DELAY: 1000,
     DASHBOARD_DELAY: 1000,
@@ -756,33 +766,35 @@ var Logo = {
     }
 }
 
-var Mini = {
+var Credits = {
     onbeforeremove: (node)=>{
         console.log("onbeforeremove: " + node.dom.id);  
         return App.transitionOut(node);
     },
 
     view: (node)=>{
-        let which = node.attrs.which;
+        return m("#credit", [
+            m("span", "v0.1"),
+            " Alpha",
+            m("img.heart", {src: "./static/heart.svg"}),
+            "janmir 2017"
+        ]);
+    }
+}
 
-        switch(which){
-            case "Credits":{
-                return m("#credit", [
-                    m("span", "v0.1"),
-                    " Alpha",
-                    m("img.heart", {src: "./static/heart.svg"}),
-                    "janmir 2017"
-                ]);
-            }break;
-            case "Qoute":{
-                return m("#qoute.slide-in", [
-                    m("img.qoute_left", {src:"./static/qoute_left.svg"}),
-                    "You're the last of the real ones.",
-                    m("img.qoute_right", {src:"./static/qoute_right.svg"}),
-                    m(".by", "- Anonymous")
-                ])
-            }break;
-        }
+var Qoute = {
+    onbeforeremove: (node)=>{
+        console.log("onbeforeremove: " + node.dom.id);  
+        return App.transitionOut(node);
+    },
+
+    view: (node)=>{
+        return m("#qoute.slide-in", [
+            m("img.qoute_left", {src:"./static/qoute_left.svg"}),
+            "You're the last of the real ones.",
+            m("img.qoute_right", {src:"./static/qoute_right.svg"}),
+            m(".by", "- Anonymous")
+        ])
     }
 }
 
@@ -805,17 +817,17 @@ var TimeInButtons = {
     setTime: (state)=>{
         switch(state){
             case 0:{ //time-in button
-                TimeInButtons.state = 0;
+                TimeInButtons.state = 1;
             }break;
             case 1:{ //time-in display
-                TimeInButtons.state = 1;
+                TimeInButtons.state = 2;
                 TimeInButtons.time_in = _.TIME_IN || "--:--";
             }break;
             case 2:{ //time-out button
-                TimeInButtons.state = 2;
+                TimeInButtons.state = 3;
             }break;
             case 2:{ //work-time display
-                TimeInButtons.state = 3;
+                TimeInButtons.state = 4;
                 TimeInButtons.time_out = _.TIME_OUT || "--:--";
                 TimeInButtons.work_time = _.WORK_TOTAL || "???";
             }break;
@@ -828,7 +840,7 @@ var TimeInButtons = {
         anime({
             targets: "#timein > .text:nth-child(1)",
             marginTop: [
-                { value: margin, duration: 100, delay: 2000, easing: 'easeInOutSine' }
+                { value: margin, duration: 500, delay: 1000, easing: 'easeInOutSine' }
             ]
         });
     },
@@ -836,9 +848,10 @@ var TimeInButtons = {
         TimeInButtons.animate();
     },
     view: ()=>{
-        return m("#timein",{
+        return m("#timein.touchable",{
             class: TimeInButtons.state == 0 || TimeInButtons == 2 ? ".touchable": ""
         },[
+            m(".text", "..."),
             m(".text", [
                 m("img.clock", {src: "./static/clock.svg"}),
                 m("span", "Time-in")
@@ -894,23 +907,26 @@ var Countdown = {
         });
 
     },
+    animate: ()=>{
+        let count = 0;
+        let rem = Countdown.count - _.TIME_REMAINING;
+        let time = rem >= 0 ? -1:1;
+        rem = Math.abs(rem);
+
+        let handle = setInterval(()=>{
+            if(count < rem){
+                Countdown.tick(time);
+                count++;
+            }else{
+                clearInterval(handle);
+            }
+        }, 350);
+    },
 
     oncreate: ()=>{
         //start animation
         setTimeout(()=>{
-            let count = 0;
-            let rem = Countdown.count - _.TIME_REMAINING;
-            let time = rem >= 0 ? -1:1;
-            rem = Math.abs(rem);
-    
-            let handle = setInterval(()=>{
-                if(count < rem){
-                    Countdown.tick(time);
-                    count++;
-                }else{
-                    clearInterval(handle);
-                }
-            }, 400);
+            Countdown.animate();
         },1000);        
     },
 
@@ -1253,12 +1269,6 @@ var App = {
         return animation.finished;
     },
 
-    onbeforeupdate: (node, old)=>{
-        // console.log("onbeforeupdate");
-        // console.log(node);
-        // console.log(old);
-    },
-
     onupdate: (node)=>{
         //Add enter transition
         App.transitionIn(node);
@@ -1427,7 +1437,7 @@ var App = {
                                     }, _.LOGIN_DELAY);
 
                                     //redraw after delay
-                                    Toast.show("Do useless checks..");  
+                                    Toast.show("Do other useless checks..");  
                                 })
                                 .catch((error)=>{
                                     alert(error);
@@ -1487,8 +1497,6 @@ var App = {
                 });
             }break;
             case 'qoute':{
-                Toast.show("Doing secret background stuff..");
-
                 //slide left
                 /*let divs = document.querySelectorAll(`.${className} .fade-out`);
                 anime({
@@ -1595,7 +1603,7 @@ var App = {
 
                         //redraw after delay
                         Toast.show("This window will now close..");        
-                        
+
                         setTimeout(()=>{
                             //hide Toast
                             Toast.hide();
@@ -1692,14 +1700,14 @@ var App = {
             case _.SPLASH:{
                 return m("#root.splash", [
                     m(Logo),
-                    m(Mini, {which:"Credits"})
+                    m(Credits)
                 ])
             }break;
             case _.INIT:{
                 //check if has credentials
                 return m("#root.loading", [
                     m(Logo),
-                    m(Mini, {which:"Credits"}),
+                    m(Credits),
                     m(Toast),                    
                     m(Loading)                   
                 ]);
@@ -1723,14 +1731,14 @@ var App = {
             case _.QOUTE:{
                 return m("#root.qoute", [
                     m(Close),
-                    m(Mini, {which:"Qoute"}),
+                    m(Qoute),
                     m(Toast)                    
                 ]);
             }break;
             case _.NOTIF:{
                 return m("#root.notif", [
                     m(Close),
-                    m(Mini, {which:"Qoute"}),
+                    m(Qoute),
                     m(Toast)
                 ]);
             }break;
