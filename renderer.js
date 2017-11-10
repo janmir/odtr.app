@@ -683,7 +683,8 @@ var fn = {
                 
                 TimeInButtons.setTime(2);                                                                      
                 
-                alert('The answer to life, the universe, and everything!');
+                _.TIME_OUT_JOB.cancel();
+                _.TIME_INCREMENT_JOB.cancel();
             });
 
             _.TIME_INCREMENT_JOB = schedule.scheduleJob(everyTime, function(){

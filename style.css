@@ -340,6 +340,7 @@ body{
     }
 
     .count{
+        text-indent: -4px;
         font-family: Roboto;
         /* vertical-align: middle; */
         font-size: 80px;
